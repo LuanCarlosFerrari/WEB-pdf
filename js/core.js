@@ -3,6 +3,31 @@ let currentTab = 'rename';
 let uploadedFiles = [];
 let isProcessing = false;
 
+// CORE namespace for module compatibility
+window.CORE = {
+    getUploadedFiles: function() {
+        return uploadedFiles || [];
+    },
+    
+    setUploadedFiles: function(files) {
+        uploadedFiles = files;
+        // Dispatch event for modules
+        document.dispatchEvent(new CustomEvent('filesUploaded', { detail: files }));
+    },
+    
+    getCurrentTab: function() {
+        return currentTab;
+    },
+    
+    isProcessing: function() {
+        return isProcessing;
+    },
+    
+    setProcessing: function(processing) {
+        isProcessing = processing;
+    }
+};
+
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function () {
     initializeDragAndDrop();
@@ -26,13 +51,19 @@ function switchTab(tabName) {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
+    if (tabButton) {
+        tabButton.classList.add('active');
+    }
 
     // Show/hide tab content
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.remove('active');
     });
-    document.getElementById(`${tabName}-tab`).classList.add('active');
+    const tabContent = document.getElementById(`${tabName}-tab`);
+    if (tabContent) {
+        tabContent.classList.add('active');
+    }
 
     currentTab = tabName;
 
@@ -41,8 +72,13 @@ function switchTab(tabName) {
         clearSingleFileUpload(tabName);
     }
 
-    addLog(`📝 Aba alterada para: ${getTabName(tabName)}`);
+    if (typeof addLog === 'function') {
+        addLog(`📝 Aba alterada para: ${getTabName(tabName)}`);
+    }
 }
+
+// Store original for compatibility
+window.switchTabOriginal = switchTab;
 
 function getTabName(tabName) {
     const names = {
@@ -164,10 +200,11 @@ function handleMultipleFiles(files, operation) {
     }
 
     uploadedFiles = validFiles;
+    CORE.setUploadedFiles(validFiles);
     displayFileList(validFiles, operation);
 
     // Enable process button
-    const processBtn = document.getElementById(`${operation === 'rename' ? 'process-btn-rename' : 'merge-btn'}`);
+    const processBtn = document.getElementById(`${operation === 'rename' ? 'process-rename-files' : 'merge-pdfs'}`);
     if (processBtn) {
         processBtn.disabled = false;
     }
@@ -261,14 +298,25 @@ function displaySingleFileInfo(file, operation) {
 
 // Enable operation controls
 function enableOperationControls(operation) {
-    const button = document.getElementById(`${operation}-btn`);
+    // Map operation names to actual button IDs
+    const buttonMap = {
+        'split': 'split-pdfs',
+        'extract': 'extract-pages', 
+        'watermark': 'add-watermark',
+        'excel': 'convert-to-excel'
+    };
+    
+    const buttonId = buttonMap[operation] || `${operation}-btn`;
+    const button = document.getElementById(buttonId);
     if (button) button.disabled = false;
 
     // Enable specific inputs
     if (operation === 'extract') {
-        document.getElementById('pages-input').disabled = false;
+        const pagesInput = document.getElementById('pages-input');
+        if (pagesInput) pagesInput.disabled = false;
     } else if (operation === 'watermark') {
-        document.getElementById('watermark-text').disabled = false;
+        const watermarkText = document.getElementById('watermark-text');
+        if (watermarkText) watermarkText.disabled = false;
     }
 }
 
@@ -284,16 +332,31 @@ function clearSingleFileUpload(operation) {
     const fileInput = document.getElementById(`file-${operation}`);
     if (fileInput) fileInput.value = '';
 
-    const button = document.getElementById(`${operation}-btn`);
+    // Map operation names to actual button IDs
+    const buttonMap = {
+        'split': 'split-pdfs',
+        'extract': 'extract-pages', 
+        'watermark': 'add-watermark',
+        'excel': 'convert-to-excel'
+    };
+    
+    const buttonId = buttonMap[operation] || `${operation}-btn`;
+    const button = document.getElementById(buttonId);
     if (button) button.disabled = true;
 
     // Disable specific inputs
     if (operation === 'extract') {
-        document.getElementById('pages-input').disabled = true;
-        document.getElementById('pages-input').value = '';
+        const pagesInput = document.getElementById('pages-input');
+        if (pagesInput) {
+            pagesInput.disabled = true;
+            pagesInput.value = '';
+        }
     } else if (operation === 'watermark') {
-        document.getElementById('watermark-text').disabled = true;
-        document.getElementById('watermark-text').value = '';
+        const watermarkText = document.getElementById('watermark-text');
+        if (watermarkText) {
+            watermarkText.disabled = true;
+            watermarkText.value = '';
+        }
     }
 }
 
@@ -303,17 +366,68 @@ function removeFile(index, operation) {
     displayFileList(uploadedFiles, operation);
 
     if (uploadedFiles.length === 0) {
-        const processBtn = document.getElementById(`${operation === 'rename' ? 'process-btn-rename' : 'merge-btn'}`);
+        const processBtn = document.getElementById(`${operation === 'rename' ? 'process-rename-files' : 'merge-pdfs'}`);
         if (processBtn) processBtn.disabled = true;
     }
 
     if (operation === 'merge' && uploadedFiles.length < 2) {
-        const mergeBtn = document.getElementById('merge-btn');
+        const mergeBtn = document.getElementById('merge-pdfs');
         if (mergeBtn) mergeBtn.disabled = true;
-        showToast('Mínimo 2 arquivos necessários para mesclar', 'warning');
+        if (typeof showToast === 'function') {
+            showToast('Mínimo 2 arquivos necessários para mesclar', 'warning');
+        }
     }
 
     addLog(`🗑️ Arquivo removido: ${index + 1}`);
+}
+
+// Global callback functions for module compatibility
+function processRenameFiles() {
+    if (window.pdfRenamer && typeof window.pdfRenamer.processRenameFiles === 'function') {
+        window.pdfRenamer.processRenameFiles();
+    } else {
+        UI.showToast('Módulo de renomeação não carregado', 'error');
+    }
+}
+
+function processSplitPDF() {
+    if (window.pdfSplitter && typeof window.pdfSplitter.splitPDFs === 'function') {
+        window.pdfSplitter.splitPDFs();
+    } else {
+        UI.showToast('Módulo de divisão não carregado', 'error');
+    }
+}
+
+function processMergePDFs() {
+    if (window.pdfMerger && typeof window.pdfMerger.mergePDFs === 'function') {
+        window.pdfMerger.mergePDFs();
+    } else {
+        UI.showToast('Módulo de mesclagem não carregado', 'error');
+    }
+}
+
+function processExtractPages() {
+    if (window.pdfExtractor && typeof window.pdfExtractor.extractPages === 'function') {
+        window.pdfExtractor.extractPages();
+    } else {
+        UI.showToast('Módulo de extração não carregado', 'error');
+    }
+}
+
+function processAddWatermark() {
+    if (window.pdfWatermarker && typeof window.pdfWatermarker.addWatermarkToPDFs === 'function') {
+        window.pdfWatermarker.addWatermarkToPDFs();
+    } else {
+        UI.showToast('Módulo de marca d\'água não carregado', 'error');
+    }
+}
+
+function processConvertToExcel() {
+    if (window.pdfToExcelConverter && typeof window.pdfToExcelConverter.convertToExcel === 'function') {
+        window.pdfToExcelConverter.convertToExcel();
+    } else {
+        UI.showToast('Módulo de conversão Excel não carregado', 'error');
+    }
 }
 
 // Utility functions
@@ -360,24 +474,39 @@ function downloadFile(blob, filename) {
 // Keyboard shortcuts
 document.addEventListener('keydown', function (e) {
     if (e.ctrlKey && e.key === 'Enter') {
-        if (currentTab === 'rename' && !document.getElementById('process-btn-rename').disabled) {
-            processRenameFiles();
-        } else if (currentTab === 'split' && !document.getElementById('split-btn').disabled) {
-            processSplitPDF();
-        } else if (currentTab === 'merge' && !document.getElementById('merge-btn').disabled) {
-            processMergePDFs();
-        } else if (currentTab === 'extract' && !document.getElementById('extract-btn').disabled) {
-            processExtractPages();
-        } else if (currentTab === 'watermark' && !document.getElementById('watermark-btn').disabled) {
-            processAddWatermark();
-        } else if (currentTab === 'excel' && !document.getElementById('excel-btn').disabled) {
-            processConvertToExcel();
+        // Map operation names to actual button IDs for checks
+        const buttonMap = {
+            'rename': 'process-rename-files',
+            'split': 'split-pdfs',
+            'merge': 'merge-pdfs',
+            'extract': 'extract-pages',
+            'watermark': 'add-watermark',
+            'excel': 'convert-to-excel'
+        };
+        
+        const buttonId = buttonMap[currentTab];
+        const button = document.getElementById(buttonId);
+        
+        if (button && !button.disabled) {
+            if (currentTab === 'rename') {
+                processRenameFiles();
+            } else if (currentTab === 'split') {
+                processSplitPDF();
+            } else if (currentTab === 'merge') {
+                processMergePDFs();
+            } else if (currentTab === 'extract') {
+                processExtractPages();
+            } else if (currentTab === 'watermark') {
+                processAddWatermark();
+            } else if (currentTab === 'excel') {
+                processConvertToExcel();
+            }
         }
     }
 
     if (e.key === 'Escape') {
-        closeDownloadModal();
-        closeHelp();
+        if (typeof closeDownloadModal === 'function') closeDownloadModal();
+        if (typeof closeHelp === 'function') closeHelp();
     }
 
     // Tab switching with Ctrl+Number
@@ -391,6 +520,6 @@ document.addEventListener('keydown', function (e) {
 
     if (e.key === 'F1') {
         e.preventDefault();
-        showHelp();
+        if (typeof showHelp === 'function') showHelp();
     }
 });

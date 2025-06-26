@@ -187,19 +187,31 @@ function handleError(operation, error) {
 
 // Loading states
 function setLoadingState(operation, loading) {
-    const button = document.getElementById(`${operation}-btn`) || document.getElementById(`process-btn-${operation}`);
+    // Map operation names to actual button IDs
+    const buttonMap = {
+        'rename': 'process-rename-files',
+        'split': 'split-pdfs',
+        'merge': 'merge-pdfs',
+        'extract': 'extract-pages',
+        'watermark': 'add-watermark',
+        'excel': 'convert-to-excel'
+    };
+    
+    const buttonId = buttonMap[operation] || `${operation}-btn`;
+    const button = document.getElementById(buttonId);
+    
     if (button) {
         if (loading) {
             button.disabled = true;
-            button.innerHTML = button.innerHTML.replace('fa-play', 'fa-spinner fa-spin').replace('fa-cut', 'fa-spinner fa-spin').replace('fa-object-group', 'fa-spinner fa-spin').replace('fa-file-export', 'fa-spinner fa-spin').replace('fa-tint', 'fa-spinner fa-spin').replace('fa-file-excel', 'fa-spinner fa-spin');
+            button.innerHTML = button.innerHTML.replace(/fa-play|fa-cut|fa-layer-group|fa-scissors|fa-stamp|fa-file-excel/g, 'fa-spinner fa-spin');
         } else {
             button.disabled = false;
             // Restore original icons
-            if (operation === 'rename') button.innerHTML = '<i class="fas fa-play mr-2"></i>Processar Arquivos';
-            else if (operation === 'split') button.innerHTML = '<i class="fas fa-cut mr-2"></i>Dividir PDF';
-            else if (operation === 'merge') button.innerHTML = '<i class="fas fa-object-group mr-2"></i>Mesclar PDFs';
-            else if (operation === 'extract') button.innerHTML = '<i class="fas fa-file-export mr-2"></i>Extrair Páginas';
-            else if (operation === 'watermark') button.innerHTML = '<i class="fas fa-tint mr-2"></i>Adicionar Marca d\'Água';
+            if (operation === 'rename') button.innerHTML = '<i class="fas fa-play mr-2"></i>Processar Renomeação';
+            else if (operation === 'split') button.innerHTML = '<i class="fas fa-cut mr-2"></i>Dividir PDFs';
+            else if (operation === 'merge') button.innerHTML = '<i class="fas fa-layer-group mr-2"></i>Mesclar PDFs';
+            else if (operation === 'extract') button.innerHTML = '<i class="fas fa-scissors mr-2"></i>Extrair Páginas';
+            else if (operation === 'watermark') button.innerHTML = '<i class="fas fa-stamp mr-2"></i>Adicionar Marca d\'água';
             else if (operation === 'excel') button.innerHTML = '<i class="fas fa-file-excel mr-2"></i>Converter para Excel';
         }
     }
