@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Processor - Sistema Modular</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1f538d',
+                        secondary: '#14a085',
+                        accent: '#d2691e',
+                        purple: '#7b2d8e',
+                        danger: '#c53030',
+                        dark: '#1a365d'
+                    },
+                    fontFamily: {
+                        'mono': ['Consolas', 'Monaco', 'Courier New', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- PDF Processing Libraries -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+
+        .file-drop-zone {
+            border: 2px dashed #cbd5e0;
+            transition: all 0.3s ease;
+        }
+
+        .file-drop-zone.drag-over {
+            border-color: #667eea;
+            background-color: rgba(102, 126, 234, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-button.active {
+            background-color: #667eea;
+            color: white;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background-color: #10b981;
+        }
+
+        .toast.error {
+            background-color: #ef4444;
+        }
+
+        .toast.warning {
+            background-color: #f59e0b;
+        }
+
+        .toast.info {
+            background-color: #3b82f6;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+            min-width: 400px;
+        }
+
+        .progress-container.show {
+            display: block;
+        }
+
+        .log-entry {
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .log-entry.info {
+            background-color: #e0f2fe;
+            color: #0277bd;
+        }
+
+        .log-entry.success {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .log-entry.warning {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .log-entry.error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .watermark-preview-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+        }
+
+        .preview-page {
+            position: relative;
+            background: white;
+            border: 1px solid #ccc;
+            width: 200px;
+            height: 260px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .watermark-sample {
+            position: absolute;
+            font-weight: bold;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .preview-content {
+            padding: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .rename-rule {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+        }
+
+        .rule-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rule-find,
+        .rule-replace {
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .rule-arrow {
+            font-weight: bold;
+            color: #6c757d;
+        }
+
+        .remove-rule {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .merge-file-item,
+        .extract-file-item,
+        .excel-file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+        }
+
+        .file-number {
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .file-name {
+            flex: 1;
+            margin: 0 12px;
+            font-weight: 500;
+        }
+
+        .file-size,
+        .file-status {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .no-files,
+        .no-rules,
+        .no-preview {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .tab-buttons {
+                flex-wrap: wrap;
+            }
+
+            .tab-button {
+                flex: 1;
+                min-width: 120px;
+                margin: 2px;
+            }
+
+            .progress-container {
+                min-width: 300px;
+                margin: 20px;
+            }
+
+            .toast {
+                right: 10px;
+                left: 10px;
+                transform: translateY(-100px);
+            }
+
+            .toast.show {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <div class="gradient-bg text-white p-6 shadow-lg">
+        <div class="container mx-auto">
+            <h1 class="text-3xl font-bold mb-2">
+                <i class="fas fa-file-pdf text-red-300 mr-3"></i>
+                PDF Processor
+            </h1>
+            <p class="text-blue-100">Sistema modular para processamento de arquivos PDF</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-6">
+        <!-- File Upload Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">
+                <i class="fas fa-upload text-blue-500 mr-2"></i>
+                Upload de Arquivos
+            </h2>
+
+            <div id="drop-zone"
+                class="file-drop-zone border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <div class="mb-4">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-lg text-gray-600 mb-2">Arraste e solte seus arquivos PDF aqui</p>
+                    <p class="text-sm text-gray-500">ou clique para selecionar arquivos</p>
+                </div>
+
+                <input type="file" id="file-input" multiple accept=".pdf" class="hidden">
+                <button onclick="document.getElementById('file-input').click()"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg btn-hover">
+                    <i class="fas fa-folder-open mr-2"></i>
+                    Selecionar Arquivos
+                </button>
+            </div>
+
+            <div id="file-list" class="mt-4"></div>
+        </div>
+
+        <!-- Feature Tabs -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="tab-buttons flex flex-wrap bg-gray-50 border-b">
+                <button
+                    class="tab-button flex-1 px-4 py-3 text-center font-medium text-gray-600 hover:bg-gray-100 active"
+                    data-tab="rename">
+                    <i class="fas fa-edit mr-2"></i>
+                    Renomear
+                </button>
+                <button class="tab-button flex-1 px-4 py-3 text-center font-medium text-gray-600 hover:bg-gray-100"
+                    data-tab="split">
+                    <i class="fas fa-cut mr-2"></i>
+                    Dividir
+                </button>
+                <button class="tab-button flex-1 px-4 py-3 text-center font-medium text-gray-600 hover:bg-gray-100"
+                    data-tab="merge">
+                    <i class="fas fa-layer-group mr-2"></i>
+                    Mesclar
+                </button>
+                <button class="tab-button flex-1 px-4 py-3 text-center font-medium text-gray-600 hover:bg-gray-100"
+                    data-tab="extract">
+                    <i class="fas fa-scissors mr-2"></i>
+                    Extrair
+                </button>
+                <button class="tab-button flex-1 px-4 py-3 text-center font-medium text-gray-600 hover:bg-gray-100"
+                    data-tab="watermark">
+                    <i class="fas fa-stamp mr-2"></i>
+                    Marca d'água
+                </button>
+                <button class="tab-button flex-1 px-4 py-3 text-center font-medium text-gray-600 hover:bg-gray-100"
+                    data-tab="excel">
+                    <i class="fas fa-file-excel mr-2"></i>
+                    Excel
+                </button>
+            </div>
+
+            <!-- Rename Tab -->
+            <div id="rename-tab" class="tab-content active p-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Renomear Arquivos</h3>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-medium mb-3">Adicionar Regra de Renomeação</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Encontrar:</label>
+                                <input type="text" id="rename-find"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Texto a ser substituído">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Substituir por:</label>
+                                <input type="text" id="rename-replace"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Novo texto (deixe vazio para remover)">
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="add-rename-rule"
+                                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md btn-hover">
+                                    <i class="fas fa-plus mr-2"></i>Adicionar Regra
+                                </button>
+                                <button id="clear-rename-rules"
+                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md btn-hover">
+                                    <i class="fas fa-trash mr-2"></i>Limpar Todas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium mb-3">Regras Configuradas</h4>
+                        <div id="rename-rules-list"
+                            class="border border-gray-300 rounded-md p-3 min-h-32 max-h-64 overflow-y-auto">
+                            <p class="no-rules">Nenhuma regra adicionada</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button id="process-rename-files"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg btn-hover">
+                        <i class="fas fa-play mr-2"></i>Processar Renomeação
+                    </button>
+                </div>
+            </div>
+
+            <!-- Split Tab -->
+            <div id="split-tab" class="tab-content p-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Dividir PDFs</h3>
+
+                <div class="mb-6">
+                    <h4 class="font-medium mb-3">Modo de Divisão</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="split-mode" value="pages" checked class="mr-2">
+                            <span>Dividir em páginas individuais</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="split-mode" value="half" class="mr-2">
+                            <span>Dividir pela metade</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="split-mode" value="custom" class="mr-2">
+                            <span>Intervalos customizados</span>
+                        </label>
+                    </div>
+
+                    <div id="custom-split-options" class="mt-4" style="display: none;">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Intervalos de páginas:</label>
+                        <input type="text" id="split-ranges"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Ex: 1-5, 7, 10-15">
+                        <p class="text-xs text-gray-500 mt-1">Use vírgulas para separar intervalos. Ex: 1-5, 7, 10-15
+                        </p>
+                    </div>
+                </div>
+
+                <button id="split-pdfs"
+                    class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg btn-hover">
+                    <i class="fas fa-cut mr-2"></i>Dividir PDFs
+                </button>
+            </div>
+
+            <!-- Merge Tab -->
+            <div id="merge-tab" class="tab-content p-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Mesclar PDFs</h3>
+
+                <div class="mb-6">
+                    <h4 class="font-medium mb-3">Ordem de Mesclagem</h4>
+                    <select id="merge-order"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="original">Ordem original</option>
+                        <option value="alphabetical">Ordem alfabética</option>
+                        <option value="size-asc">Tamanho (menor para maior)</option>
+                        <option value="size-desc">Tamanho (maior para menor)</option>
+                        <option value="date-asc">Data (mais antigo primeiro)</option>
+                        <option value="date-desc">Data (mais recente primeiro)</option>
+                    </select>
+                </div>
+
+                <div id="merge-preview" class="mb-6 border border-gray-300 rounded-md p-4 bg-gray-50">
+                    <p class="no-files">Nenhum PDF carregado para mesclagem</p>
+                </div>
+
+                <button id="merge-pdfs"
+                    class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg btn-hover">
+                    <i class="fas fa-layer-group mr-2"></i>Mesclar PDFs
+                </button>
+            </div>
+
+            <!-- Extract Tab -->
+            <div id="extract-tab" class="tab-content p-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Extrair Páginas</h3>
+
+                <div class="mb-6">
+                    <h4 class="font-medium mb-3">Modo de Extração</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="extract-mode" value="first" checked class="mr-2">
+                            <span>Primeira página</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="extract-mode" value="last" class="mr-2">
+                            <span>Última página</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="extract-mode" value="odd" class="mr-2">
+                            <span>Páginas ímpares</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="extract-mode" value="even" class="mr-2">
+                            <span>Páginas pares</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="extract-mode" value="custom" class="mr-2">
+                            <span>Páginas específicas</span>
+                        </label>
+                    </div>
+
+                    <div id="custom-extract-options" class="mt-4" style="display: none;">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Páginas a extrair:</label>
+                        <input type="text" id="extract-ranges"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Ex: 1-5, 7, 10-15">
+                        <p class="text-xs text-gray-500 mt-1">Use vírgulas para separar páginas/intervalos</p>
+                    </div>
+                </div>
+
+                <div id="extract-preview" class="mb-6 border border-gray-300 rounded-md p-4 bg-gray-50">
+                    <p class="no-files">Nenhum PDF carregado para extração</p>
+                </div>
+
+                <button id="extract-pages"
+                    class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg btn-hover">
+                    <i class="fas fa-scissors mr-2"></i>Extrair Páginas
+                </button>
+            </div>
+
+            <!-- Watermark Tab -->
+            <div id="watermark-tab" class="tab-content p-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Adicionar Marca d'água</h3>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-medium mb-3">Configurações da Marca d'água</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Texto:</label>
+                                <input type="text" id="watermark-text"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Texto da marca d'água">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tamanho:</label>
+                                    <input type="range" id="watermark-size" min="20" max="100" value="48"
+                                        class="w-full">
+                                    <span class="text-xs text-gray-500">48px</span>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Opacidade:</label>
+                                    <input type="range" id="watermark-opacity" min="0.1" max="1" step="0.1" value="0.3"
+                                        class="w-full">
+                                    <span class="text-xs text-gray-500">30%</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Rotação:</label>
+                                    <input type="range" id="watermark-rotation" min="0" max="360" value="45"
+                                        class="w-full">
+                                    <span class="text-xs text-gray-500">45°</span>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Cor:</label>
+                                    <input type="color" id="watermark-color" value="#cccccc"
+                                        class="w-full h-10 rounded border border-gray-300">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Posição:</label>
+                                <div class="grid grid-cols-3 gap-2 text-sm">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="watermark-position" value="top-left" class="mr-1">
+                                        Superior Esq.
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="watermark-position" value="top-center" class="mr-1">
+                                        Superior Centro
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="watermark-position" value="top-right" class="mr-1">
+                                        Superior Dir.
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="watermark-position" value="center" checked
+                                            class="mr-1">
+                                        Centro
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="watermark-position" value="bottom-left" class="mr-1">
+                                        Inferior Esq.
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="watermark-position" value="bottom-center"
+                                            class="mr-1">
+                                        Inferior Centro
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="watermark-position" value="bottom-right" class="mr-1">
+                                        Inferior Dir.
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button id="preview-watermark"
+                                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md btn-hover">
+                                    <i class="fas fa-eye mr-2"></i>Preview
+                                </button>
+                                <button id="reset-watermark-settings"
+                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md btn-hover">
+                                    <i class="fas fa-undo mr-2"></i>Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium mb-3">Visualização</h4>
+                        <div id="watermark-preview">
+                            <p class="no-preview">Digite um texto para ver a prévia</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button id="add-watermark"
+                        class="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg btn-hover">
+                        <i class="fas fa-stamp mr-2"></i>Adicionar Marca d'água
+                    </button>
+                </div>
+            </div>
+
+            <!-- Excel Tab -->
+            <div id="excel-tab" class="tab-content p-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Converter para Excel</h3>
+
+                <div class="mb-6">
+                    <h4 class="font-medium mb-3">Modo de Extração</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="excel-mode" value="tables" checked class="mr-2">
+                            <span>Extrair tabelas automaticamente</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="excel-mode" value="full-text" class="mr-2">
+                            <span>Todo o texto em formato tabular</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="excel-mode" value="custom" class="mr-2">
+                            <span>Padrão customizado</span>
+                        </label>
+                    </div>
+
+                    <div id="custom-excel-options" class="mt-4" style="display: none;">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Padrão RegEx:</label>
+                        <input type="text" id="excel-pattern"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Ex: \d+\.\d+|\b[A-Z][a-z]+\b">
+                        <p class="text-xs text-gray-500 mt-1">Use expressões regulares para extrair dados específicos
+                        </p>
+                    </div>
+                </div>
+
+                <div id="excel-preview" class="mb-6 border border-gray-300 rounded-md p-4 bg-gray-50">
+                    <p class="no-files">Nenhum PDF carregado para conversão</p>
+                </div>
+
+                <button id="convert-to-excel"
+                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg btn-hover">
+                    <i class="fas fa-file-excel mr-2"></i>Converter para Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- Logs Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mt-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-700">
+                    <i class="fas fa-list-alt text-blue-500 mr-2"></i>
+                    Log de Atividades
+                </h3>
+                <button id="clear-logs"
+                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md btn-hover text-sm">
+                    <i class="fas fa-trash mr-2"></i>Limpar
+                </button>
+            </div>
+            <div id="log-container" class="bg-gray-50 rounded-md p-4 max-h-64 overflow-y-auto font-mono text-sm">
+                <div class="log-entry info">Sistema iniciado - Pronto para processar arquivos PDF</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div id="progress-container" class="progress-container">
+        <div class="text-center">
+            <div class="mb-4">
+                <i class="fas fa-cog fa-spin text-3xl text-blue-500"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Processando...</h3>
+            <p id="progress-text" class="text-gray-600 mb-4">Iniciando processamento...</p>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="progress-bar" class="bg-blue-500 h-2 rounded-full progress-bar" style="width: 0%"></div>
+            </div>
+            <p id="progress-percentage" class="text-sm text-gray-500 mt-2">0%</p>
+        </div>
+    </div>
+
+    <!-- Modular Scripts -->
+    <script src="js/ui.js"></script>
+    <script src="js/core.js"></script>
+    <script src="js/rename.js"></script>
+    <script src="js/split.js"></script>
+    <script src="js/merge.js"></script>
+    <script src="js/extract.js"></script>
+    <script src="js/watermark.js"></script>
+    <script src="js/excel.js"></script>
+
+    <script>
+        // Initialize system when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Show startup message
+            setTimeout(() => {
+                UI.showToast('Sistema modular iniciado! 🚀', 'success');
+                UI.addLog('Sistema modular carregado com sucesso');
+            }, 1000);
+
+            // Update range input displays
+            const updateRangeDisplay = (inputId, displayId, suffix = '') => {
+                const input = document.getElementById(inputId);
+                const display = document.querySelector(`#${inputId} + span`);
+                if (input && display) {
+                    input.addEventListener('input', (e) => {
+                        display.textContent = e.target.value + suffix;
+                    });
+                }
+            };
+
+            updateRangeDisplay('watermark-size', null, 'px');
+            updateRangeDisplay('watermark-opacity', null, '%');
+            updateRangeDisplay('watermark-rotation', null, '°');
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'o') {
+                e.preventDefault();
+                document.getElementById('file-input').click();
+            }
+
+            if (e.ctrlKey && e.key === 'l') {
+                e.preventDefault();
+                UI.clearLogs();
+            }
+        });
+    </script>
+</body>
+
+</html>
