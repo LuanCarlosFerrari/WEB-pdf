@@ -1,7 +1,7 @@
 // Configuration and namespace management
 window.UI = {
     // Toast notifications
-    showToast: function(message, type = 'info') {
+    showToast: function (message, type = 'info') {
         if (typeof showToast === 'function') {
             showToast(message, type);
         } else {
@@ -10,7 +10,7 @@ window.UI = {
     },
 
     // Log management
-    addLog: function(message) {
+    addLog: function (message) {
         if (typeof addLog === 'function') {
             addLog(message);
         } else {
@@ -19,7 +19,7 @@ window.UI = {
     },
 
     // Clear logs
-    clearLogs: function() {
+    clearLogs: function () {
         if (typeof clearLogs === 'function') {
             clearLogs();
         } else {
@@ -31,7 +31,7 @@ window.UI = {
     },
 
     // Progress management
-    showProgress: function(operation) {
+    showProgress: function (operation) {
         if (typeof showProgress === 'function') {
             showProgress(operation);
         } else {
@@ -42,7 +42,7 @@ window.UI = {
         }
     },
 
-    hideProgress: function(operation) {
+    hideProgress: function (operation) {
         if (typeof hideProgress === 'function') {
             hideProgress(operation);
         } else {
@@ -53,7 +53,7 @@ window.UI = {
         }
     },
 
-    updateProgress: function(percentage, message) {
+    updateProgress: function (percentage, message) {
         const progressBar = document.getElementById('progress-bar');
         const progressText = document.getElementById('progress-text');
         const progressPercentage = document.getElementById('progress-percentage');

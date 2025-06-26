@@ -26,8 +26,8 @@ function updateStatus(message, type) {
         const icon = indicator.previousElementSibling;
         if (icon) {
             icon.className = `fas fa-circle mr-2 ${type === 'success' ? 'text-green-400' :
-                    type === 'processing' ? 'text-yellow-400' :
-                        'text-red-400'
+                type === 'processing' ? 'text-yellow-400' :
+                    'text-red-400'
                 }`;
         }
     }
@@ -93,9 +93,9 @@ function showToast(message, type = 'info') {
 
     const toast = document.createElement('div');
     toast.className = `toast bg-white border-l-4 rounded-lg shadow-lg p-4 mb-2 max-w-sm ${type === 'success' ? 'border-green-500' :
-            type === 'error' ? 'border-red-500' :
-                type === 'warning' ? 'border-yellow-500' :
-                    'border-blue-500'
+        type === 'error' ? 'border-red-500' :
+            type === 'warning' ? 'border-yellow-500' :
+                'border-blue-500'
         }`;
 
     const icon = {
@@ -196,10 +196,10 @@ function setLoadingState(operation, loading) {
         'watermark': 'add-watermark',
         'excel': 'convert-to-excel'
     };
-    
+
     const buttonId = buttonMap[operation] || `${operation}-btn`;
     const button = document.getElementById(buttonId);
-    
+
     if (button) {
         if (loading) {
             button.disabled = true;

@@ -5,25 +5,25 @@ let isProcessing = false;
 
 // CORE namespace for module compatibility
 window.CORE = {
-    getUploadedFiles: function() {
+    getUploadedFiles: function () {
         return uploadedFiles || [];
     },
-    
-    setUploadedFiles: function(files) {
+
+    setUploadedFiles: function (files) {
         uploadedFiles = files;
         // Dispatch event for modules
         document.dispatchEvent(new CustomEvent('filesUploaded', { detail: files }));
     },
-    
-    getCurrentTab: function() {
+
+    getCurrentTab: function () {
         return currentTab;
     },
-    
-    isProcessing: function() {
+
+    isProcessing: function () {
         return isProcessing;
     },
-    
-    setProcessing: function(processing) {
+
+    setProcessing: function (processing) {
         isProcessing = processing;
     }
 };
@@ -301,11 +301,11 @@ function enableOperationControls(operation) {
     // Map operation names to actual button IDs
     const buttonMap = {
         'split': 'split-pdfs',
-        'extract': 'extract-pages', 
+        'extract': 'extract-pages',
         'watermark': 'add-watermark',
         'excel': 'convert-to-excel'
     };
-    
+
     const buttonId = buttonMap[operation] || `${operation}-btn`;
     const button = document.getElementById(buttonId);
     if (button) button.disabled = false;
@@ -335,11 +335,11 @@ function clearSingleFileUpload(operation) {
     // Map operation names to actual button IDs
     const buttonMap = {
         'split': 'split-pdfs',
-        'extract': 'extract-pages', 
+        'extract': 'extract-pages',
         'watermark': 'add-watermark',
         'excel': 'convert-to-excel'
     };
-    
+
     const buttonId = buttonMap[operation] || `${operation}-btn`;
     const button = document.getElementById(buttonId);
     if (button) button.disabled = true;
@@ -483,10 +483,10 @@ document.addEventListener('keydown', function (e) {
             'watermark': 'add-watermark',
             'excel': 'convert-to-excel'
         };
-        
+
         const buttonId = buttonMap[currentTab];
         const button = document.getElementById(buttonId);
-        
+
         if (button && !button.disabled) {
             if (currentTab === 'rename') {
                 processRenameFiles();
