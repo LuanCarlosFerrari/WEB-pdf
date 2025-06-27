@@ -30,7 +30,6 @@
     <!-- PDF Processing Libraries -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- PDF.js for text extraction -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
@@ -718,7 +717,6 @@
                 <!-- Single file inputs for specific operations -->
                 <input type="file" id="file-extract" accept=".pdf" class="hidden">
                 <input type="file" id="file-watermark" accept=".pdf" class="hidden">
-                <input type="file" id="file-excel" accept=".pdf" class="hidden">
 
                 <button id="select-files-btn" class="btn-base btn-primary">
                     <i class="fas fa-folder-open mr-2"></i>
@@ -753,11 +751,6 @@
                     data-tab="watermark" onclick="switchTab('watermark')">
                     <i class="fas fa-stamp mr-2"></i>
                     Marca d'água
-                </button>
-                <button class="tab-button flex-1 px-4 py-3 text-center font-medium text-gray-600 hover:bg-gray-100"
-                    data-tab="excel" onclick="switchTab('excel')">
-                    <i class="fas fa-file-excel mr-2"></i>
-                    Excel
                 </button>
             </div>
 
@@ -988,48 +981,6 @@
                 <!-- File Info for Watermark -->
                 <div id="watermark-file-info" class="hidden mt-4"></div>
             </div>
-
-            <!-- Excel Tab -->
-            <div id="excel-tab" class="tab-content p-6">
-                <h3 class="text-lg font-semibold mb-4 text-gray-700">Converter para Excel</h3>
-
-                <div class="mb-6">
-                    <h4 class="font-medium mb-3">Modo de Extração</h4>
-                    <div class="space-y-2">
-                        <label class="flex items-center">
-                            <input type="radio" name="excel-mode" value="tables" checked class="mr-2">
-                            <span>Extrair tabelas automaticamente</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="excel-mode" value="full-text" class="mr-2">
-                            <span>Todo o texto em formato tabular</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="excel-mode" value="custom" class="mr-2">
-                            <span>Padrão customizado</span>
-                        </label>
-                    </div>
-
-                    <div id="custom-excel-options" class="mt-4" style="display: none;">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Padrão RegEx:</label>
-                        <input type="text" id="excel-pattern" class="input-base"
-                            placeholder="Ex: \d+\.\d+|\b[A-Z][a-z]+\b">
-                        <p class="text-xs text-gray-500 mt-1">Use expressões regulares para extrair dados específicos
-                        </p>
-                    </div>
-                </div>
-
-                <div id="excel-preview" class="mb-6 border border-gray-300 rounded-md p-4 bg-gray-50">
-                    <p class="no-files">Nenhum PDF carregado para conversão</p>
-                </div>
-
-                <!-- File Info for Excel -->
-                <div id="excel-file-info" class="hidden mb-4"></div>
-
-                <button id="convert-to-excel" class="btn-base btn-secondary btn-lg">
-                    <i class="fas fa-file-excel mr-2"></i>Converter para Excel
-                </button>
-            </div>
         </div>
 
         <!-- Logs Section -->
@@ -1075,7 +1026,6 @@
     <script src="js/merge.js"></script>
     <script src="js/extract.js"></script>
     <script src="js/watermark.js"></script>
-    <script src="js/excel.js"></script>
     <script src="js/init.js"></script>
 
     <script>

@@ -134,8 +134,7 @@ Object.assign(window.UI, {
             'split': 'split-pdfs',
             'merge': 'merge-pdfs',
             'extract': 'extract-pages',
-            'watermark': 'add-watermark',
-            'excel': 'convert-to-excel'
+            'watermark': 'add-watermark'
         };
 
         const buttonId = buttonMap[operation] || `${operation}-btn`;
@@ -144,7 +143,7 @@ Object.assign(window.UI, {
         if (button) {
             if (loading) {
                 button.disabled = true;
-                button.innerHTML = button.innerHTML.replace(/fa-play|fa-cut|fa-layer-group|fa-scissors|fa-stamp|fa-file-excel/g, 'fa-spinner fa-spin');
+                button.innerHTML = button.innerHTML.replace(/fa-play|fa-cut|fa-layer-group|fa-scissors|fa-stamp/g, 'fa-spinner fa-spin');
             } else {
                 button.disabled = false;
                 // Restore original icons
@@ -152,7 +151,6 @@ Object.assign(window.UI, {
                 else if (operation === 'merge') button.innerHTML = '<i class="fas fa-layer-group mr-2"></i>Mesclar PDFs';
                 else if (operation === 'extract') button.innerHTML = '<i class="fas fa-scissors mr-2"></i>Extrair Páginas';
                 else if (operation === 'watermark') button.innerHTML = '<i class="fas fa-stamp mr-2"></i>Adicionar Marca d\'água';
-                else if (operation === 'excel') button.innerHTML = '<i class="fas fa-file-excel mr-2"></i>Converter para Excel';
             }
         }
     },

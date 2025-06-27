@@ -79,8 +79,7 @@ function getTabName(tabName) {
         split: 'Dividir',
         merge: 'Mesclar',
         extract: 'Extrair',
-        watermark: 'Marca d\'Água',
-        excel: 'Excel'
+        watermark: 'Marca d\'Água'
     };
     return names[tabName] || tabName;
 }
@@ -148,8 +147,6 @@ function initializeDragAndDrop() {
                 document.getElementById('file-extract').click();
             } else if (zoneId.includes('watermark')) {
                 document.getElementById('file-watermark').click();
-            } else if (zoneId.includes('excel')) {
-                document.getElementById('file-excel').click();
             }
         });
     });
@@ -239,7 +236,7 @@ function initializeFileInputs() {
     }
 
     // Single file inputs
-    ['extract', 'watermark', 'excel'].forEach(operation => {
+    ['extract', 'watermark'].forEach(operation => {
         const input = document.getElementById(`file-${operation}`);
         if (input) {
             input.addEventListener('change', (e) => {
@@ -310,7 +307,7 @@ function routeFilesToCurrentTab(files) {
     if (currentTab === 'merge') {
         // Multiple file operations
         handleMultipleFiles(files, currentTab);
-    } else if (['split', 'extract', 'watermark', 'excel'].includes(currentTab)) {
+    } else if (['split', 'extract', 'watermark'].includes(currentTab)) {
         // Single file operations - use first file
         if (files.length > 0) {
             handleSingleFile(files[0], currentTab);
@@ -331,8 +328,7 @@ function updateTabButtons(tabName) {
         'split': 'split-pdfs',
         'merge': 'merge-pdfs',
         'extract': 'extract-pages',
-        'watermark': 'add-watermark',
-        'excel': 'convert-to-excel'
+        'watermark': 'add-watermark'
     };
 
     const buttonId = buttonMap[tabName];
@@ -546,8 +542,7 @@ function enableOperationControls(operation) {
     const buttonMap = {
         'split': 'split-pdfs',
         'extract': 'extract-pages',
-        'watermark': 'add-watermark',
-        'excel': 'convert-to-excel'
+        'watermark': 'add-watermark'
     };
 
     const buttonId = buttonMap[operation] || `${operation}-btn`;
@@ -634,7 +629,7 @@ function removeMainFile(index) {
         });
 
         // Clear single file displays
-        ['split', 'extract', 'watermark', 'excel'].forEach(operation => {
+        ['split', 'extract', 'watermark'].forEach(operation => {
             clearSingleFileUpload(operation);
         });
     } else {
@@ -677,14 +672,6 @@ function processAddWatermark() {
         window.pdfWatermarker.addWatermarkToPDFs();
     } else {
         UI.showToast('Módulo de marca d\'água não carregado', 'error');
-    }
-}
-
-function processConvertToExcel() {
-    if (window.pdfToExcelConverter && typeof window.pdfToExcelConverter.convertToExcel === 'function') {
-        window.pdfToExcelConverter.convertToExcel();
-    } else {
-        UI.showToast('Módulo de conversão Excel não carregado', 'error');
     }
 }
 
@@ -737,8 +724,7 @@ document.addEventListener('keydown', function (e) {
             'split': 'split-pdfs',
             'merge': 'merge-pdfs',
             'extract': 'extract-pages',
-            'watermark': 'add-watermark',
-            'excel': 'convert-to-excel'
+            'watermark': 'add-watermark'
         };
 
         const buttonId = buttonMap[currentTab];
@@ -753,8 +739,6 @@ document.addEventListener('keydown', function (e) {
                 processExtractPages();
             } else if (currentTab === 'watermark') {
                 processAddWatermark();
-            } else if (currentTab === 'excel') {
-                processConvertToExcel();
             }
         }
     }
@@ -765,8 +749,8 @@ document.addEventListener('keydown', function (e) {
     }
 
     // Tab switching with Ctrl+Number
-    if (e.ctrlKey && e.key >= '1' && e.key <= '6') {
-        const tabs = ['split', 'merge', 'extract', 'watermark', 'excel'];
+    if (e.ctrlKey && e.key >= '1' && e.key <= '4') {
+        const tabs = ['split', 'merge', 'extract', 'watermark'];
         const tabIndex = parseInt(e.key) - 1;
         if (tabs[tabIndex]) {
             switchTab(tabs[tabIndex]);
@@ -837,8 +821,7 @@ window.debugButtons = {
             'split-pdfs',
             'merge-pdfs',
             'extract-pages',
-            'add-watermark',
-            'convert-to-excel'
+            'add-watermark'
         ];
 
         console.log('=== ESTADO DOS BOTÕES ===');

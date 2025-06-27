@@ -60,10 +60,6 @@ document.addEventListener('DOMContentLoaded', function () {
             window.pdfWatermarker = new PDFWatermarker();
         }
 
-        if (typeof PDFToExcelConverter !== 'undefined') {
-            window.pdfToExcelConverter = new PDFToExcelConverter();
-        }
-
         if (typeof UI !== 'undefined') {
             UI.addLog('✅ Todos os módulos carregados com sucesso');
             UI.showToast('Sistema iniciado com sucesso!', 'success');

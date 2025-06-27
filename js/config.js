@@ -276,8 +276,7 @@ Object.assign(window.UI, {
             'split-pdfs': 'fa-cut',
             'merge-pdfs': 'fa-layer-group',
             'extract-pages': 'fa-scissors',
-            'add-watermark': 'fa-stamp',
-            'convert-to-excel': 'fa-file-excel'
+            'add-watermark': 'fa-stamp'
         };
 
         const icon = button.querySelector('i');
