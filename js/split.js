@@ -73,10 +73,10 @@ class PDFSplitter {
 
     async displayFileInfo(file) {
         console.log('🔍 Iniciando displayFileInfo para:', file.name);
-        
+
         // Aguardar um pouco para garantir que o DOM está pronto
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         const fileInfoContainer = document.getElementById('split-file-info');
         const fileName = document.getElementById('split-file-name');
         const fileSize = document.getElementById('split-file-size');
@@ -685,7 +685,7 @@ class PDFSplitter {
 // Função de teste para verificar disponibilidade dos elementos
 function testSplitElements() {
     console.log('🧪 Testando disponibilidade dos elementos da aba Split...');
-    
+
     const elements = {
         'split-file-info': document.getElementById('split-file-info'),
         'split-file-name': document.getElementById('split-file-name'),
@@ -694,13 +694,13 @@ function testSplitElements() {
         'split-pdfs': document.getElementById('split-pdfs'),
         'preview-split': document.getElementById('preview-split')
     };
-    
+
     console.log('📊 Resultados do teste:');
     Object.entries(elements).forEach(([id, element]) => {
         const status = element ? '✅' : '❌';
         console.log(`${status} ${id}: ${!!element}`);
     });
-    
+
     console.log('🧪 Teste de elementos concluído!');
     return elements;
 }

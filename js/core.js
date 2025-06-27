@@ -388,11 +388,11 @@ function updateTabSpecificElements(tabName, pdfFiles) {
             console.log('🔄 Atualizando elementos da aba split...');
             console.log('📁 Arquivos PDF disponíveis:', pdfFiles.length);
             console.log('🔧 window.pdfSplitter disponível:', !!window.pdfSplitter);
-            
+
             if (pdfFiles.length > 0) {
                 const file = pdfFiles[0];
                 console.log('📄 Arquivo selecionado:', file.name);
-                
+
                 if (window.pdfSplitter && typeof window.pdfSplitter.displayFileInfo === 'function') {
                     // Chamar de forma assíncrona sem bloquear
                     window.pdfSplitter.displayFileInfo(file).catch(error => {
