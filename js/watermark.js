@@ -68,10 +68,7 @@ class PDFWatermarker {
             }
         });
 
-        const positionRadios = document.querySelectorAll('input[name="watermark-position"]');
-        positionRadios.forEach(radio => {
-            radio.addEventListener('change', () => this.updateWatermarkPreview());
-        });
+        // Posição não é mais selecionável - aplicação automática
     }
 
     updateWatermarkPreview() {
@@ -85,28 +82,54 @@ class PDFWatermarker {
             return;
         }
 
+        // Criar multiple marcas d'água para mostrar o padrão repetido
+        const watermarkElements = this.getMultipleWatermarkPositions().map(position => {
+            return `
+                <div class="watermark-sample" style="
+                    font-size: ${settings.size}px;
+                    opacity: ${settings.opacity};
+                    color: ${settings.color};
+                    transform: rotate(${settings.rotation}deg);
+                    position: absolute;
+                    ${position.style}
+                    pointer-events: none;
+                    z-index: 1;
+                ">
+                    ${settings.text}
+                </div>
+            `;
+        }).join('');
+
         previewContainer.innerHTML = `
             <div class="watermark-preview-container">
                 <div class="preview-page">
-                    <div class="watermark-sample" style="
-                        font-size: ${settings.size}px;
-                        opacity: ${settings.opacity};
-                        color: ${settings.color};
-                        transform: rotate(${settings.rotation}deg);
-                        ${this.getPositionStyles(settings.position)}
-                    ">
-                        ${settings.text}
-                    </div>
-                    <div class="preview-content">
-                        <p>Conteúdo do PDF</p>
-                        <p>Lorem ipsum dolor sit amet...</p>
+                    ${watermarkElements}
+                    <div class="preview-content" style="position: relative; z-index: 2; background: rgba(255,255,255,0.8); padding: 20px;">
+                        <p><strong>Conteúdo do PDF</strong></p>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                        <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+                        <p style="margin-top: 40px;">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
                     </div>
                 </div>
             </div>
         `;
     }
 
+    getMultipleWatermarkPositions() {
+        // Retorna múltiplas posições para criar um padrão de marca d'água repetida
+        return [
+            { style: 'top: 15%; left: 15%;' },
+            { style: 'top: 15%; right: 15%;' },
+            { style: 'top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(' + (document.getElementById('watermark-rotation')?.value || '45') + 'deg);' },
+            { style: 'bottom: 15%; left: 15%;' },
+            { style: 'bottom: 15%; right: 15%;' },
+            { style: 'top: 35%; left: 50%; transform: translateX(-50%) rotate(' + (document.getElementById('watermark-rotation')?.value || '45') + 'deg);' },
+            { style: 'bottom: 35%; left: 50%; transform: translateX(-50%) rotate(' + (document.getElementById('watermark-rotation')?.value || '45') + 'deg);' }
+        ];
+    }
+
     getPositionStyles(position) {
+        // Método mantido para compatibilidade, mas não mais usado
         const positions = {
             'center': 'top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(var(--rotation));',
             'top-left': 'top: 20px; left: 20px;',
@@ -126,8 +149,8 @@ class PDFWatermarker {
             size: parseInt(document.getElementById('watermark-size')?.value || '48'),
             opacity: parseFloat(document.getElementById('watermark-opacity')?.value || '0.3'),
             rotation: parseInt(document.getElementById('watermark-rotation')?.value || '45'),
-            color: document.getElementById('watermark-color')?.value || '#cccccc',
-            position: document.querySelector('input[name="watermark-position"]:checked')?.value || 'center'
+            color: document.getElementById('watermark-color')?.value || '#cccccc'
+            // position removida - agora usa aplicação automática múltipla
         };
     }
 
@@ -192,18 +215,20 @@ class PDFWatermarker {
                 const page = pages[i];
                 const { width, height } = page.getSize();
 
-                // Calcular posição da marca d'água
-                const position = this.calculateWatermarkPosition(settings.position, width, height, settings);
+                // Aplicar múltiplas marcas d'água em posições diferentes
+                const positions = this.calculateMultipleWatermarkPositions(width, height, settings);
 
-                // Adicionar texto da marca d'água
-                page.drawText(settings.text, {
-                    x: position.x,
-                    y: position.y,
-                    size: settings.size,
-                    font: font,
-                    color: PDFLib.rgb(...this.hexToRgb(settings.color)),
-                    opacity: settings.opacity,
-                    rotate: PDFLib.degrees(settings.rotation)
+                positions.forEach(position => {
+                    // Adicionar texto da marca d'água em cada posição
+                    page.drawText(settings.text, {
+                        x: position.x,
+                        y: position.y,
+                        size: settings.size,
+                        font: font,
+                        color: PDFLib.rgb(...this.hexToRgb(settings.color)),
+                        opacity: settings.opacity,
+                        rotate: PDFLib.degrees(settings.rotation)
+                    });
                 });
             }
 
@@ -224,7 +249,60 @@ class PDFWatermarker {
         }
     }
 
+    calculateMultipleWatermarkPositions(pageWidth, pageHeight, settings) {
+        const margin = 60;
+        const centerX = pageWidth / 2;
+        const centerY = pageHeight / 2;
+        const textWidth = settings.text.length * settings.size * 0.6; // Estimativa aproximada
+
+        // Retornar múltiplas posições estratégicas para cobertura completa
+        return [
+            // Cantos
+            {
+                x: margin,
+                y: pageHeight - margin - settings.size
+            },
+            {
+                x: pageWidth - margin - textWidth,
+                y: pageHeight - margin - settings.size
+            },
+            {
+                x: margin,
+                y: margin + settings.size
+            },
+            {
+                x: pageWidth - margin - textWidth,
+                y: margin + settings.size
+            },
+
+            // Centro e meios
+            {
+                x: centerX - textWidth / 2,
+                y: centerY
+            },
+            {
+                x: centerX - textWidth / 2,
+                y: pageHeight * 0.25
+            },
+            {
+                x: centerX - textWidth / 2,
+                y: pageHeight * 0.75
+            },
+
+            // Posições laterais para páginas maiores
+            {
+                x: pageWidth * 0.25 - textWidth / 2,
+                y: centerY
+            },
+            {
+                x: pageWidth * 0.75 - textWidth / 2,
+                y: centerY
+            }
+        ];
+    }
+
     calculateWatermarkPosition(position, pageWidth, pageHeight, settings) {
+        // Método mantido para compatibilidade, mas não mais usado
         const margin = 50;
 
         switch (position) {
@@ -295,7 +373,7 @@ class PDFWatermarker {
         this.updateWatermarkPreview();
 
         const settings = this.getWatermarkSettings();
-        UI.showToast(`Prévia atualizada: "${settings.text}" (${settings.size}px, ${Math.round(settings.opacity * 100)}% opacidade)`, 'info');
+        UI.showToast(`Prévia atualizada: "${settings.text}" (${settings.size}px, ${Math.round(settings.opacity * 100)}% opacidade) - Aplicação múltipla automática`, 'info');
     }
 
     resetWatermarkSettings() {
@@ -305,10 +383,7 @@ class PDFWatermarker {
         document.getElementById('watermark-rotation').value = '45';
         document.getElementById('watermark-color').value = '#cccccc';
 
-        const centerRadio = document.querySelector('input[name="watermark-position"][value="center"]');
-        if (centerRadio) {
-            centerRadio.checked = true;
-        }
+        // Posição não é mais selecionável - aplicação automática
 
         this.updateWatermarkPreview();
         UI.showToast('Configurações de marca d\'água resetadas', 'info');
@@ -327,12 +402,7 @@ class PDFWatermarker {
                 if (settings.rotation) document.getElementById('watermark-rotation').value = settings.rotation;
                 if (settings.color) document.getElementById('watermark-color').value = settings.color;
 
-                if (settings.position) {
-                    const positionRadio = document.querySelector(`input[name="watermark-position"][value="${settings.position}"]`);
-                    if (positionRadio) {
-                        positionRadio.checked = true;
-                    }
-                }
+                // Posição não é mais usada - aplicação automática
 
                 this.updateWatermarkPreview();
             } catch (error) {
