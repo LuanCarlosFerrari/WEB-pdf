@@ -133,7 +133,7 @@ class PDFExtractor {
                     failedFiles++;
                     console.error(`❌ Erro ao processar ${file.name}:`, error);
                     UI.addLog(`❌ Erro ao processar ${file.name}: ${error.message}`);
-                    
+
                     // Continuar com o próximo arquivo
                     continue;
                 }
@@ -143,7 +143,7 @@ class PDFExtractor {
             }
 
             UI.hideProgress();
-            
+
             // Resumo final
             const summary = [];
             if (successfulFiles > 0) {
@@ -154,7 +154,7 @@ class PDFExtractor {
             }
 
             const message = `Extração concluída! ${summary.join(' - ')}`;
-            
+
             if (failedFiles === 0) {
                 UI.showToast(message, 'success');
             } else if (successfulFiles > 0) {
@@ -175,7 +175,7 @@ class PDFExtractor {
     async processSinglePDFExtraction(file, extractMode) {
         try {
             console.log(`🔄 Processando ${file.name} no modo: ${extractMode}`);
-            
+
             // Carregar o PDF usando PDF-lib
             const arrayBuffer = await file.arrayBuffer();
             const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
@@ -230,7 +230,7 @@ class PDFExtractor {
 
     async extractFirstPage(pdfDoc, originalName) {
         console.log(`🔢 Extraindo primeira página de ${originalName}`);
-        
+
         const totalPages = pdfDoc.getPageCount();
         if (totalPages === 0) {
             console.log('⚠️ PDF não tem páginas');
@@ -249,7 +249,7 @@ class PDFExtractor {
             const fileName = `${baseName}_primeira_página.pdf`;
 
             this.downloadPDF(pdfBytes, fileName);
-            
+
             const message = `Primeira página extraída: ${fileName}`;
             UI.addLog(message);
             console.log(`✅ ${message}`);
@@ -263,7 +263,7 @@ class PDFExtractor {
 
     async extractLastPage(pdfDoc, originalName, totalPages) {
         console.log(`🔢 Extraindo última página de ${originalName} (página ${totalPages})`);
-        
+
         if (totalPages === 0) {
             console.log('⚠️ PDF não tem páginas');
             return 0;
@@ -281,7 +281,7 @@ class PDFExtractor {
             const fileName = `${baseName}_última_página.pdf`;
 
             this.downloadPDF(pdfBytes, fileName);
-            
+
             const message = `Última página extraída: ${fileName}`;
             UI.addLog(message);
             console.log(`✅ ${message}`);
@@ -295,7 +295,7 @@ class PDFExtractor {
 
     async extractOddPages(pdfDoc, originalName, totalPages) {
         console.log(`🔢 Extraindo páginas ímpares de ${originalName} (${totalPages} páginas total)`);
-        
+
         const oddPageIndices = [];
         // Páginas ímpares: 1, 3, 5, 7... (índices 0, 2, 4, 6...)
         for (let i = 0; i < totalPages; i += 2) {
@@ -313,9 +313,9 @@ class PDFExtractor {
         try {
             const newPdf = await PDFLib.PDFDocument.create();
             const copiedPages = await newPdf.copyPages(pdfDoc, oddPageIndices);
-            
+
             console.log(`✅ ${copiedPages.length} páginas copiadas com sucesso`);
-            
+
             copiedPages.forEach((page, index) => {
                 newPdf.addPage(page);
                 console.log(`📄 Página ${oddPageIndices[index] + 1} adicionada ao novo PDF`);
@@ -326,7 +326,7 @@ class PDFExtractor {
             const fileName = `${baseName}_páginas_ímpares.pdf`;
 
             this.downloadPDF(pdfBytes, fileName);
-            
+
             const message = `Páginas ímpares extraídas: ${fileName} (${oddPageIndices.length} páginas: ${oddPageIndices.map(idx => idx + 1).join(', ')})`;
             UI.addLog(message);
             console.log(`✅ ${message}`);
@@ -340,7 +340,7 @@ class PDFExtractor {
 
     async extractEvenPages(pdfDoc, originalName, totalPages) {
         console.log(`🔢 Extraindo páginas pares de ${originalName} (${totalPages} páginas total)`);
-        
+
         const evenPageIndices = [];
         // Páginas pares: 2, 4, 6, 8... (índices 1, 3, 5, 7...)
         for (let i = 1; i < totalPages; i += 2) {
@@ -358,9 +358,9 @@ class PDFExtractor {
         try {
             const newPdf = await PDFLib.PDFDocument.create();
             const copiedPages = await newPdf.copyPages(pdfDoc, evenPageIndices);
-            
+
             console.log(`✅ ${copiedPages.length} páginas copiadas com sucesso`);
-            
+
             copiedPages.forEach((page, index) => {
                 newPdf.addPage(page);
                 console.log(`📄 Página ${evenPageIndices[index] + 1} adicionada ao novo PDF`);
@@ -371,7 +371,7 @@ class PDFExtractor {
             const fileName = `${baseName}_páginas_pares.pdf`;
 
             this.downloadPDF(pdfBytes, fileName);
-            
+
             const message = `Páginas pares extraídas: ${fileName} (${evenPageIndices.length} páginas: ${evenPageIndices.map(idx => idx + 1).join(', ')})`;
             UI.addLog(message);
             console.log(`✅ ${message}`);
@@ -385,7 +385,7 @@ class PDFExtractor {
 
     async extractCustomPages(pdfDoc, originalName, totalPages) {
         console.log(`🎯 Extraindo páginas customizadas de ${originalName} (${totalPages} páginas total)`);
-        
+
         const rangesInput = document.getElementById('extract-ranges')?.value || '';
 
         if (!rangesInput.trim()) {
@@ -430,9 +430,9 @@ class PDFExtractor {
         try {
             const newPdf = await PDFLib.PDFDocument.create();
             const copiedPages = await newPdf.copyPages(pdfDoc, pageIndicesArray);
-            
+
             console.log(`✅ ${copiedPages.length} páginas copiadas com sucesso`);
-            
+
             copiedPages.forEach((page, index) => {
                 newPdf.addPage(page);
                 console.log(`📄 Página ${pageIndicesArray[index] + 1} adicionada ao novo PDF`);
@@ -442,7 +442,7 @@ class PDFExtractor {
             const fileName = `${baseName}_páginas_extraídas.pdf`;
 
             this.downloadPDF(pdfBytes, fileName);
-            
+
             const message = `Páginas customizadas extraídas: ${fileName} (${pageIndicesArray.length} páginas: ${pageIndicesArray.map(idx => idx + 1).join(', ')})`;
             UI.addLog(message);
             console.log(`✅ ${message}`);
@@ -456,13 +456,13 @@ class PDFExtractor {
 
     parsePageRanges(rangesInput, totalPages) {
         console.log(`🔍 Parseando ranges: "${rangesInput}" para PDF com ${totalPages} páginas`);
-        
+
         const ranges = [];
         const parts = rangesInput.split(',');
 
         for (const part of parts) {
             const trimmed = part.trim();
-            
+
             if (!trimmed) continue; // Ignorar partes vazias
 
             console.log(`🔸 Processando parte: "${trimmed}"`);
@@ -501,22 +501,22 @@ class PDFExtractor {
         try {
             // Sanitizar nome do arquivo
             const sanitizedFileName = this.sanitizeFileName(fileName);
-            
+
             console.log(`💾 Fazendo download de: ${sanitizedFileName}`);
-            
+
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = sanitizedFileName;
-            
+
             // Adicionar ao DOM temporariamente
             document.body.appendChild(link);
             link.click();
-            
+
             // Limpar
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
-            
+
             console.log(`✅ Download iniciado: ${sanitizedFileName}`);
         } catch (error) {
             console.error(`❌ Erro no download de ${fileName}:`, error);
@@ -616,7 +616,7 @@ class PDFExtractor {
 // Função de teste para validar extração de páginas ímpares e pares
 function testPageExtractionLogic() {
     console.log('🧪 Testando lógica de extração de páginas...');
-    
+
     // Simular diferentes cenários de PDFs
     const testCases = [
         { totalPages: 1, name: 'PDF com 1 página' },
@@ -624,10 +624,10 @@ function testPageExtractionLogic() {
         { totalPages: 5, name: 'PDF com 5 páginas' },
         { totalPages: 10, name: 'PDF com 10 páginas' }
     ];
-    
+
     testCases.forEach(testCase => {
         console.log(`\n📄 ${testCase.name} (${testCase.totalPages} páginas):`);
-        
+
         // Testar páginas ímpares
         const oddIndices = [];
         for (let i = 0; i < testCase.totalPages; i += 2) {
@@ -635,7 +635,7 @@ function testPageExtractionLogic() {
         }
         const oddPages = oddIndices.map(idx => idx + 1);
         console.log(`  🔸 Páginas ímpares: ${oddPages.join(', ')} (${oddPages.length} páginas)`);
-        
+
         // Testar páginas pares
         const evenIndices = [];
         for (let i = 1; i < testCase.totalPages; i += 2) {
@@ -643,14 +643,14 @@ function testPageExtractionLogic() {
         }
         const evenPages = evenIndices.map(idx => idx + 1);
         console.log(`  🔹 Páginas pares: ${evenPages.join(', ')} (${evenPages.length} páginas)`);
-        
+
         // Verificar se todas as páginas estão cobertas
         const allPages = [...oddPages, ...evenPages].sort((a, b) => a - b);
-        const expectedPages = Array.from({length: testCase.totalPages}, (_, i) => i + 1);
+        const expectedPages = Array.from({ length: testCase.totalPages }, (_, i) => i + 1);
         const isComplete = JSON.stringify(allPages) === JSON.stringify(expectedPages);
         console.log(`  ✅ Todas as páginas cobertas: ${isComplete ? 'SIM' : 'NÃO'}`);
     });
-    
+
     console.log('\n🧪 Teste de lógica concluído!');
 }
 
