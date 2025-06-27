@@ -1,5 +1,5 @@
 // Core functionality and shared utilities
-let currentTab = 'rename';
+let currentTab = 'split';
 let uploadedFiles = [];
 let isProcessing = false;
 
@@ -76,7 +76,6 @@ window.switchTabOriginal = switchTab;
 
 function getTabName(tabName) {
     const names = {
-        rename: 'Renomear',
         split: 'Dividir',
         merge: 'Mesclar',
         extract: 'Extrair',
@@ -141,9 +140,7 @@ function initializeDragAndDrop() {
         zone.addEventListener('drop', handleDrop);
         zone.addEventListener('click', () => {
             const zoneId = zone.id;
-            if (zoneId.includes('rename')) {
-                document.getElementById('files-rename').click();
-            } else if (zoneId.includes('merge')) {
+            if (zoneId.includes('merge')) {
                 document.getElementById('files-merge').click();
             } else if (zoneId.includes('split')) {
                 document.getElementById('file-input').click();
@@ -199,8 +196,8 @@ function handleDrop(e) {
     }
 
     // Handle specific drop zones
-    if (zoneId === 'drop-zone-rename' || zoneId === 'drop-zone-merge') {
-        handleMultipleFiles(pdfFiles, zoneId.includes('rename') ? 'rename' : 'merge');
+    if (zoneId === 'drop-zone-merge') {
+        handleMultipleFiles(pdfFiles, 'merge');
     } else {
         if (pdfFiles.length > 1) {
             if (typeof UI !== 'undefined' && UI.showToast) {
@@ -234,13 +231,6 @@ function initializeFileInputs() {
     }
 
     // Multiple file inputs
-    const renameInput = document.getElementById('files-rename');
-    if (renameInput) {
-        renameInput.addEventListener('change', (e) => {
-            handleMultipleFiles(Array.from(e.target.files), 'rename');
-        });
-    }
-
     const mergeInput = document.getElementById('files-merge');
     if (mergeInput) {
         mergeInput.addEventListener('change', (e) => {
@@ -317,7 +307,7 @@ function routeFilesToCurrentTab(files) {
     CORE.setUploadedFiles(files);
 
     // Route based on current tab
-    if (currentTab === 'rename' || currentTab === 'merge') {
+    if (currentTab === 'merge') {
         // Multiple file operations
         handleMultipleFiles(files, currentTab);
     } else if (['split', 'extract', 'watermark', 'excel'].includes(currentTab)) {
@@ -338,7 +328,6 @@ function updateTabButtons(tabName) {
 
     // Map de botões por aba
     const buttonMap = {
-        'rename': 'process-rename-files',
         'split': 'split-pdfs',
         'merge': 'merge-pdfs',
         'extract': 'extract-pages',
@@ -445,7 +434,7 @@ function handleMultipleFiles(files, operation) {
     displayFileList(validFiles, operation);
 
     // Enable process button
-    const processBtn = document.getElementById(`${operation === 'rename' ? 'process-rename-files' : 'merge-pdfs'}`);
+    const processBtn = document.getElementById('merge-pdfs');
     if (processBtn) {
         processBtn.disabled = false;
     }
@@ -498,7 +487,7 @@ function handleSingleFile(file, operation) {
 
 // Display file list for multiple files
 function displayFileList(files, operation) {
-    const containerId = operation === 'rename' ? 'file-list-rename' : 'merge-file-list';
+    const containerId = 'merge-file-list';
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -614,7 +603,7 @@ function removeFile(index, operation) {
     displayFileList(uploadedFiles, operation);
 
     if (uploadedFiles.length === 0) {
-        const processBtn = document.getElementById(`${operation === 'rename' ? 'process-rename-files' : 'merge-pdfs'}`);
+        const processBtn = document.getElementById('merge-pdfs');
         if (processBtn) processBtn.disabled = true;
     }
 
@@ -638,7 +627,7 @@ function removeMainFile(index) {
     // Update current tab if needed
     if (uploadedFiles.length === 0) {
         // Clear all tab-specific displays
-        const containers = ['file-list-rename', 'merge-file-list'];
+        const containers = ['merge-file-list'];
         containers.forEach(id => {
             const container = document.getElementById(id);
             if (container) container.innerHTML = '';
@@ -659,14 +648,6 @@ function removeMainFile(index) {
 }
 
 // Global callback functions for module compatibility
-function processRenameFiles() {
-    if (window.pdfRenamer && typeof window.pdfRenamer.processRenameFiles === 'function') {
-        window.pdfRenamer.processRenameFiles();
-    } else {
-        UI.showToast('Módulo de renomeação não carregado', 'error');
-    }
-}
-
 function processSplitPDF() {
     if (window.pdfSplitter && typeof window.pdfSplitter.splitPDFs === 'function') {
         window.pdfSplitter.splitPDFs();
@@ -753,7 +734,6 @@ document.addEventListener('keydown', function (e) {
     if (e.ctrlKey && e.key === 'Enter') {
         // Map operation names to actual button IDs for checks
         const buttonMap = {
-            'rename': 'process-rename-files',
             'split': 'split-pdfs',
             'merge': 'merge-pdfs',
             'extract': 'extract-pages',
@@ -765,9 +745,7 @@ document.addEventListener('keydown', function (e) {
         const button = document.getElementById(buttonId);
 
         if (button && !button.disabled) {
-            if (currentTab === 'rename') {
-                processRenameFiles();
-            } else if (currentTab === 'split') {
+            if (currentTab === 'split') {
                 processSplitPDF();
             } else if (currentTab === 'merge') {
                 processMergePDFs();
@@ -788,7 +766,7 @@ document.addEventListener('keydown', function (e) {
 
     // Tab switching with Ctrl+Number
     if (e.ctrlKey && e.key >= '1' && e.key <= '6') {
-        const tabs = ['rename', 'split', 'merge', 'extract', 'watermark', 'excel'];
+        const tabs = ['split', 'merge', 'extract', 'watermark', 'excel'];
         const tabIndex = parseInt(e.key) - 1;
         if (tabs[tabIndex]) {
             switchTab(tabs[tabIndex]);
@@ -807,7 +785,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setTimeout(() => {
         // Inicializar estado dos botões da aba atual
         if (typeof updateTabButtons === 'function') {
-            updateTabButtons(currentTab || 'rename');
+            updateTabButtons(currentTab || 'split');
         }
 
         console.log('🔧 Estado inicial dos botões configurado');
@@ -856,7 +834,6 @@ window.debugUpload = {
 window.debugButtons = {
     checkButtonStates: function () {
         const buttons = [
-            'process-rename-files',
             'split-pdfs',
             'merge-pdfs',
             'extract-pages',

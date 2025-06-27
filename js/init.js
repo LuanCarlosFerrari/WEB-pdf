@@ -44,10 +44,6 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('Initializing PDF modules...');
 
         // Initialize core functionality first
-        if (typeof PDFRenamer !== 'undefined') {
-            window.pdfRenamer = new PDFRenamer();
-        }
-
         if (typeof PDFSplitter !== 'undefined') {
             window.pdfSplitter = new PDFSplitter();
         }

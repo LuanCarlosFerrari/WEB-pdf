@@ -131,7 +131,6 @@ Object.assign(window.UI, {
     setLoadingState: function (operation, loading) {
         // Map operation names to actual button IDs
         const buttonMap = {
-            'rename': 'process-rename-files',
             'split': 'split-pdfs',
             'merge': 'merge-pdfs',
             'extract': 'extract-pages',
@@ -149,8 +148,7 @@ Object.assign(window.UI, {
             } else {
                 button.disabled = false;
                 // Restore original icons
-                if (operation === 'rename') button.innerHTML = '<i class="fas fa-play mr-2"></i>Processar Renomeação';
-                else if (operation === 'split') button.innerHTML = '<i class="fas fa-cut mr-2"></i>Dividir PDFs';
+                if (operation === 'split') button.innerHTML = '<i class="fas fa-cut mr-2"></i>Dividir PDFs';
                 else if (operation === 'merge') button.innerHTML = '<i class="fas fa-layer-group mr-2"></i>Mesclar PDFs';
                 else if (operation === 'extract') button.innerHTML = '<i class="fas fa-scissors mr-2"></i>Extrair Páginas';
                 else if (operation === 'watermark') button.innerHTML = '<i class="fas fa-stamp mr-2"></i>Adicionar Marca d\'água';

@@ -273,7 +273,6 @@ Object.assign(window.UI, {
 
     restoreButtonIcon: function (button) {
         const iconMap = {
-            'process-rename-files': 'fa-play',
             'split-pdfs': 'fa-cut',
             'merge-pdfs': 'fa-layer-group',
             'extract-pages': 'fa-scissors',
@@ -364,6 +363,6 @@ function switchTab(tabName) {
 }
 
 // Initialize global variables
-window.currentTab = 'rename';
+window.currentTab = 'split';
 window.uploadedFiles = [];
 window.isProcessing = false;
