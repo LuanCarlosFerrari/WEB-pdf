@@ -1,6 +1,7 @@
 // PDF Splitting Module
 class PDFSplitter {
     constructor() {
+        this.isProcessing = false;
         this.initializeSplitFeatures();
     }
 
@@ -121,19 +122,37 @@ class PDFSplitter {
     }
 
     async splitPDFs() {
+        console.log('splitPDFs() chamada');
+
+        // Verificar se já está processando para evitar execução dupla
+        if (this.isProcessing) {
+            console.log('Já está processando, ignorando nova chamada');
+            return;
+        }
+
+        this.isProcessing = true;
+
         // Verificar se há arquivo selecionado especificamente na aba de divisão
         let filesToProcess = [];
 
         if (this.selectedFile) {
             filesToProcess = [this.selectedFile];
+            console.log('Usando selectedFile:', this.selectedFile.name);
         } else {
             // Fallback para arquivos do upload geral
             const uploadedFiles = CORE.getUploadedFiles().filter(file => file.type === 'application/pdf');
             if (uploadedFiles.length === 0) {
                 UI.showToast('Nenhum arquivo PDF selecionado para divisão', 'warning');
+                this.isProcessing = false;
                 return;
             }
-            filesToProcess = uploadedFiles;
+            // Para operação de split, usar apenas o primeiro arquivo
+            filesToProcess = [uploadedFiles[0]];
+            console.log('Usando uploadedFiles[0]:', uploadedFiles[0].name);
+
+            if (uploadedFiles.length > 1) {
+                UI.showToast('Apenas o primeiro arquivo será usado para divisão', 'warning');
+            }
         }
 
         const splitMode = document.querySelector('input[name="split-mode"]:checked')?.value || 'pages';
@@ -171,6 +190,8 @@ class PDFSplitter {
             console.error('Erro na divisão de PDFs:', error);
             UI.hideProgress();
             UI.showToast('Erro durante a divisão dos PDFs', 'error');
+        } finally {
+            this.isProcessing = false;
         }
     }
 
