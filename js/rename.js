@@ -129,7 +129,7 @@ class PDFRenamer {
         this.rules.push(rule);
         console.log('✅ Regra adicionada:', rule);
         console.log('📊 Total de regras:', this.rules.length);
-        
+
         this.updateRulesDisplay();
         this.saveRenameRules(); // Salvar automaticamente
         this.clearRuleInputs();
@@ -177,9 +177,9 @@ class PDFRenamer {
         const beforeCount = this.rules.length;
         this.rules = this.rules.filter(rule => rule.id !== ruleId);
         const afterCount = this.rules.length;
-        
+
         console.log(`📊 Regras: ${beforeCount} → ${afterCount}`);
-        
+
         this.updateRulesDisplay();
         this.saveRenameRules(); // Salvar automaticamente
         UI.showToast('Regra removida', 'info');
@@ -239,7 +239,7 @@ class PDFRenamer {
         this.extractionRules.push(rule);
         console.log('✅ Regra de extração adicionada:', rule);
         console.log('📊 Total de regras de extração:', this.extractionRules.length);
-        
+
         this.updateExtractionRulesDisplay();
         this.saveExtractionRules();
         this.clearExtractionInputs();
@@ -315,9 +315,9 @@ class PDFRenamer {
         const beforeCount = this.extractionRules.length;
         this.extractionRules = this.extractionRules.filter(rule => rule.id !== ruleId);
         const afterCount = this.extractionRules.length;
-        
+
         console.log(`📊 Regras de extração: ${beforeCount} → ${afterCount}`);
-        
+
         this.updateExtractionRulesDisplay();
         this.saveExtractionRules();
         UI.showToast('Regra de extração removida', 'info');
@@ -351,7 +351,7 @@ class PDFRenamer {
         if (fieldSelect) fieldSelect.value = 'remetente';
         if (positionSelect) positionSelect.value = 'prefix';
         if (customPattern) customPattern.value = '';
-        
+
         this.toggleCustomPattern(false);
     }
 
@@ -359,7 +359,7 @@ class PDFRenamer {
 
     async extractDataFromPDF(file) {
         console.log('📖 Extraindo dados do PDF:', file.name);
-        
+
         try {
             // Carregar PDF.js se não estiver disponível
             if (!window.pdfjsLib) {
@@ -369,11 +369,11 @@ class PDFRenamer {
 
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-            
+
             console.log(`📄 PDF carregado com ${pdf.numPages} páginas`);
 
             let fullText = '';
-            
+
             // Extrair texto de todas as páginas (máximo 5 para performance)
             const maxPages = Math.min(pdf.numPages, 5);
             for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
@@ -417,9 +417,9 @@ class PDFRenamer {
 
     extractDataUsingRules(text, rules) {
         const extractedData = {};
-        
+
         console.log('🔍 Aplicando regras de extração ao texto...');
-        
+
         rules.forEach((rule, index) => {
             try {
                 const pattern = rule.pattern;
@@ -453,7 +453,7 @@ class PDFRenamer {
             const value = extractedData[rule.field];
             if (value) {
                 const sanitizedValue = this.sanitizeFileName(value);
-                
+
                 switch (rule.position) {
                     case 'prefix':
                         newName = `${sanitizedValue}_${baseName}${extension}`;
@@ -583,7 +583,7 @@ class PDFRenamer {
             }
 
             UI.hideProgress();
-            
+
             const message = `Processo concluído! ${renamedCount} arquivo(s) renomeado(s), ${unchangedCount} inalterado(s), ${errorCount} erro(s)`;
             UI.showToast(message, errorCount > 0 ? 'warning' : 'success');
             console.log(`🏁 ${message}`);
@@ -620,13 +620,13 @@ class PDFRenamer {
         try {
             // Extrair texto do PDF
             const pdfText = await this.extractDataFromPDF(file);
-            
+
             // Aplicar regras de extração
             const extractedData = this.extractDataUsingRules(pdfText, this.extractionRules);
-            
+
             // Gerar novo nome baseado nos dados extraídos
             const newName = this.generateNewFileName(file.name, extractedData, this.extractionRules);
-            
+
             return newName;
 
         } catch (error) {
@@ -641,11 +641,11 @@ class PDFRenamer {
     async downloadRenamedFile(file, newName) {
         try {
             console.log(`💾 Fazendo download renomeado: ${file.name} → ${newName}`);
-            
+
             // Sanitizar nome do arquivo
             const sanitizedName = this.sanitizeFileName(newName);
             console.log(`🧹 Nome sanitizado: ${sanitizedName}`);
-            
+
             // Criar um novo arquivo com o nome alterado
             const blob = new Blob([file], { type: file.type });
 
@@ -653,14 +653,14 @@ class PDFRenamer {
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = sanitizedName;
-            
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+
             // Limpar URL object
             URL.revokeObjectURL(link.href);
-            
+
             console.log(`✅ Download iniciado: ${sanitizedName}`);
 
         } catch (error) {
@@ -734,14 +734,14 @@ class PDFRenamer {
         console.log('🧪 Testando regras de renomeação...');
         console.log(`📄 Arquivo de teste: "${testFileName}"`);
         console.log(`📝 Regras configuradas: ${this.rules.length}`);
-        
+
         if (this.rules.length === 0) {
             console.log('⚠️ Nenhuma regra configurada para testar');
             return testFileName;
         }
-        
+
         let resultName = testFileName;
-        
+
         this.rules.forEach((rule, index) => {
             const beforeApply = resultName;
             if (rule.find) {
@@ -749,10 +749,10 @@ class PDFRenamer {
                 console.log(`🔄 Regra ${index + 1}: "${beforeApply}" → "${resultName}"`);
             }
         });
-        
+
         console.log(`🎯 Resultado final: "${testFileName}" → "${resultName}"`);
         console.log('🧪 Teste concluído!');
-        
+
         return resultName;
     }
 
@@ -764,14 +764,14 @@ class PDFRenamer {
             { find: ')', replace: '' },
             { find: 'teste', replace: 'exemplo' }
         ];
-        
+
         examples.forEach(rule => {
             this.rules.push({
                 ...rule,
                 id: Date.now() + Math.random()
             });
         });
-        
+
         this.updateRulesDisplay();
         this.saveRenameRules();
         UI.showToast('Regras de exemplo adicionadas', 'success');
@@ -781,7 +781,7 @@ class PDFRenamer {
     // Função para testar extração de dados
     testContentExtraction() {
         console.log('🧪 Testando extração de dados...');
-        
+
         const sampleText = `
         Remetente: João Silva
         Valor: R$ 1.250,50
@@ -789,18 +789,18 @@ class PDFRenamer {
         Número do documento: 12345
         Descrição: Pagamento de serviços prestados
         `;
-        
+
         console.log('📝 Texto de exemplo:', sampleText);
-        
+
         if (this.extractionRules.length === 0) {
             console.log('⚠️ Nenhuma regra de extração configurada');
             UI.showToast('Configure algumas regras de extração primeiro', 'warning');
             return;
         }
-        
+
         const extractedData = this.extractDataUsingRules(sampleText, this.extractionRules);
         const newName = this.generateNewFileName('documento_teste.pdf', extractedData, this.extractionRules);
-        
+
         console.log('🎯 Resultado do teste de extração:', {
             extractedData,
             newName
@@ -811,14 +811,14 @@ class PDFRenamer {
         UI.addLog(`📝 Dados extraídos: ${JSON.stringify(extractedData)}`);
         UI.addLog(`🎯 Novo nome: documento_teste.pdf → ${newName}`);
         UI.showToast('Teste de extração executado - verifique o log', 'info');
-        
+
         return { extractedData, newName };
     }
 
     // Função para adicionar regras de extração de exemplo
     addExampleExtractions() {
         console.log('📝 Adicionando regras de extração de exemplo...');
-        
+
         const examples = [
             {
                 field: 'remetente',
@@ -831,14 +831,14 @@ class PDFRenamer {
                 pattern: this.getExtractionPattern('valor')
             }
         ];
-        
+
         examples.forEach(example => {
             this.extractionRules.push({
                 ...example,
                 id: Date.now() + Math.random()
             });
         });
-        
+
         this.updateExtractionRulesDisplay();
         this.saveExtractionRules();
         UI.showToast('Regras de extração de exemplo adicionadas', 'success');
