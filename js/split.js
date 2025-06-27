@@ -1,6 +1,8 @@
 // PDF Splitting Module
 // CORREÇÃO: Removida inicialização duplicada para evitar event listeners duplos
 // e consequente download duplicado de arquivos (Bug corrigido em 27/06/2025)
+// MELHORIAS: Adicionada sanitização de nomes de arquivo, melhor tratamento de erros
+// e continuidade de processamento mesmo com falhas em arquivos individuais
 class PDFSplitter {
     constructor() {
         this.isProcessing = false;
@@ -189,27 +191,41 @@ class PDFSplitter {
 
             UI.showProgress(0, 'Iniciando divisão dos PDFs...');
 
+            let processedCount = 0;
+            let errorCount = 0;
+
             for (let i = 0; i < filesToProcess.length; i++) {
                 const file = filesToProcess[i];
                 const progress = ((i + 1) / filesToProcess.length) * 100;
 
                 UI.showProgress(progress, `Dividindo ${file.name}...`);
 
-                await this.processSinglePDF(file, splitMode);
-
-                UI.addLog(`PDF dividido: ${file.name}`);
+                try {
+                    await this.processSinglePDF(file, splitMode);
+                    UI.addLog(`✅ PDF dividido com sucesso: ${file.name}`);
+                    processedCount++;
+                } catch (error) {
+                    console.error(`Erro ao processar ${file.name}:`, error);
+                    UI.addLog(`❌ Erro ao processar ${file.name}: ${error.message}`);
+                    errorCount++;
+                }
 
                 // Pequena pausa para não sobrecarregar
                 await this.sleep(200);
             }
 
             UI.hideProgress();
-            UI.showToast(`Divisão concluída! ${filesToProcess.length} arquivo(s) processado(s)`, 'success');
+
+            if (errorCount === 0) {
+                UI.showToast(`Divisão concluída! ${processedCount} arquivo(s) processado(s)`, 'success');
+            } else {
+                UI.showToast(`Divisão concluída com erros: ${processedCount} sucesso(s), ${errorCount} erro(s)`, 'warning');
+            }
 
         } catch (error) {
-            console.error('Erro na divisão de PDFs:', error);
+            console.error('Erro geral na divisão de PDFs:', error);
             UI.hideProgress();
-            UI.showToast('Erro durante a divisão dos PDFs', 'error');
+            UI.showToast('Erro crítico durante a divisão dos PDFs', 'error');
         } finally {
             this.isProcessing = false;
         }
@@ -244,9 +260,37 @@ class PDFSplitter {
         }
     }
 
+    // Função auxiliar para sanitizar nomes de arquivo
+    sanitizeFileName(fileName) {
+        // Remove ou substitui caracteres problemáticos
+        return fileName
+            .replace(/[<>:"\/\\|?*]/g, '_')  // Caracteres não permitidos no Windows
+            .replace(/\s+/g, '_')           // Espaços por underscores
+            .replace(/[áàâãä]/g, 'a')       // Acentos
+            .replace(/[éèêë]/g, 'e')
+            .replace(/[íìîï]/g, 'i')
+            .replace(/[óòôõö]/g, 'o')
+            .replace(/[úùûü]/g, 'u')
+            .replace(/[ç]/g, 'c')
+            .replace(/[ñ]/g, 'n')
+            .replace(/[ÁÀÂÃÄ]/g, 'A')
+            .replace(/[ÉÈÊË]/g, 'E')
+            .replace(/[ÍÌÎÏ]/g, 'I')
+            .replace(/[ÓÒÔÕÖ]/g, 'O')
+            .replace(/[ÚÙÛÜ]/g, 'U')
+            .replace(/[Ç]/g, 'C')
+            .replace(/[Ñ]/g, 'N')
+            .replace(/_{2,}/g, '_')         // Múltiplos underscores por um só
+            .replace(/^_|_$/g, '')         // Remove underscores do início e fim
+            .substring(0, 200);            // Limita o tamanho do nome
+    }
+
     async splitByPages(pdfDoc, originalName, totalPages) {
-        const baseName = originalName.replace('.pdf', '');
+        const baseName = this.sanitizeFileName(originalName.replace('.pdf', ''));
         UI.addLog(`Iniciando divisão por páginas: ${totalPages} página(s)`);
+
+        let successCount = 0;
+        let errorCount = 0;
 
         for (let i = 0; i < totalPages; i++) {
             try {
@@ -257,35 +301,43 @@ class PDFSplitter {
 
                 // Gerar o PDF
                 const pdfBytes = await newPdf.save();
-                const fileName = `${baseName}_página_${i + 1}.pdf`;
+                const fileName = `${baseName}_pagina_${i + 1}.pdf`;
 
                 // Download do arquivo
                 this.downloadPDF(pdfBytes, fileName);
+                successCount++;
 
                 // Log de progresso
                 UI.addLog(`Página ${i + 1}/${totalPages} criada: ${fileName}`);
 
-                // Atualizar progresso se necessário
+                // Atualizar progresso
                 const pageProgress = ((i + 1) / totalPages) * 100;
                 UI.showProgress(pageProgress, `Criando página ${i + 1} de ${totalPages}...`);
 
                 // Pequena pausa para não sobrecarregar o navegador
                 if (i < totalPages - 1) {
-                    await this.sleep(50);
+                    await this.sleep(100);
                 }
 
             } catch (error) {
+                errorCount++;
                 console.error(`Erro ao processar página ${i + 1}:`, error);
                 UI.addLog(`❌ Erro na página ${i + 1}: ${error.message}`);
-                throw new Error(`Falha ao criar página ${i + 1}: ${error.message}`);
+
+                // Continuar processando outras páginas mesmo com erro
+                continue;
             }
         }
 
-        UI.addLog(`✅ Divisão por páginas concluída: ${totalPages} arquivo(s) criado(s)`);
+        UI.addLog(`✅ Divisão por páginas concluída: ${successCount} arquivo(s) criado(s), ${errorCount} erro(s)`);
+
+        if (errorCount > 0) {
+            UI.showToast(`Divisão concluída com ${errorCount} erro(s). Verifique os logs.`, 'warning');
+        }
     }
 
     async splitInHalf(pdfDoc, originalName, totalPages) {
-        const baseName = originalName.replace('.pdf', '');
+        const baseName = this.sanitizeFileName(originalName.replace('.pdf', ''));
         const midPoint = Math.ceil(totalPages / 2);
 
         UI.addLog(`Iniciando divisão pela metade: ${totalPages} páginas (${midPoint} + ${totalPages - midPoint})`);
@@ -341,7 +393,7 @@ class PDFSplitter {
             throw new Error('Intervalos de páginas não especificados');
         }
 
-        const baseName = originalName.replace('.pdf', '');
+        const baseName = this.sanitizeFileName(originalName.replace('.pdf', ''));
         const ranges = this.parsePageRanges(rangesInput, totalPages);
 
         if (ranges.length === 0) {
@@ -359,6 +411,9 @@ class PDFSplitter {
                 UI.addLog(`  ${index + 1}. Páginas ${range.start}-${range.end}`);
             }
         });
+
+        let successCount = 0;
+        let errorCount = 0;
 
         for (let i = 0; i < ranges.length; i++) {
             try {
@@ -390,13 +445,14 @@ class PDFSplitter {
                 // Gerar o PDF
                 const pdfBytes = await newPdf.save();
 
-                // Gerar nome do arquivo apropriado
+                // Gerar nome do arquivo apropriado (com sanitização)
                 const fileName = range.start === range.end
-                    ? `${baseName}_página_${range.start}.pdf`
-                    : `${baseName}_páginas_${range.start}-${range.end}.pdf`;
+                    ? `${baseName}_pagina_${range.start}.pdf`
+                    : `${baseName}_paginas_${range.start}-${range.end}.pdf`;
 
                 // Download do arquivo
                 this.downloadPDF(pdfBytes, fileName);
+                successCount++;
 
                 UI.addLog(`✅ Intervalo ${i + 1}/${ranges.length} criado: ${fileName}`);
 
@@ -406,13 +462,20 @@ class PDFSplitter {
                 }
 
             } catch (error) {
+                errorCount++;
                 console.error(`Erro ao processar intervalo ${i + 1}:`, error);
                 UI.addLog(`❌ Erro no intervalo ${i + 1}: ${error.message}`);
-                throw new Error(`Falha no intervalo ${i + 1}: ${error.message}`);
+
+                // Continuar processando outros intervalos mesmo com erro
+                continue;
             }
         }
 
-        UI.addLog(`✅ Divisão customizada concluída: ${ranges.length} arquivo(s) criado(s)`);
+        UI.addLog(`✅ Divisão customizada concluída: ${successCount} arquivo(s) criado(s), ${errorCount} erro(s)`);
+
+        if (errorCount > 0) {
+            UI.showToast(`Divisão concluída com ${errorCount} erro(s). Verifique os logs.`, 'warning');
+        }
     }
 
     parsePageRanges(rangesInput, totalPages) {
@@ -491,19 +554,44 @@ class PDFSplitter {
     }
 
     downloadPDF(pdfBytes, fileName) {
-        console.log(`🔽 Iniciando download: ${fileName}`);
-        UI.addLog(`📥 Download iniciado: ${fileName}`);
+        try {
+            console.log(`🔽 Iniciando download: ${fileName}`);
+            UI.addLog(`📥 Download iniciado: ${fileName}`);
 
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
+            // Verificar se o nome do arquivo é válido
+            if (!fileName || fileName.trim() === '') {
+                throw new Error('Nome do arquivo inválido');
+            }
 
-        console.log(`✅ Download concluído: ${fileName}`);
+            // Garantir que termina com .pdf
+            const sanitizedFileName = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+
+            // Verificar se o blob foi criado corretamente
+            if (!blob || blob.size === 0) {
+                throw new Error('Erro ao criar arquivo PDF');
+            }
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = sanitizedFileName;
+
+            // Adicionar ao DOM temporariamente
+            document.body.appendChild(link);
+            link.click();
+
+            // Limpeza
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+
+            console.log(`✅ Download concluído: ${sanitizedFileName}`);
+
+        } catch (error) {
+            console.error(`❌ Erro no download de ${fileName}:`, error);
+            UI.addLog(`❌ Erro no download de ${fileName}: ${error.message}`);
+            throw error;
+        }
     }
 
     sleep(ms) {
