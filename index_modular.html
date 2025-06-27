@@ -721,7 +721,7 @@
                 <input type="file" id="file-watermark" accept=".pdf" class="hidden">
                 <input type="file" id="file-excel" accept=".pdf" class="hidden">
 
-                <button onclick="document.getElementById('file-input').click()" class="btn-base btn-primary">
+                <button id="select-files-btn" class="btn-base btn-primary">
                     <i class="fas fa-folder-open mr-2"></i>
                     Selecionar Arquivos
                 </button>
@@ -1207,11 +1207,6 @@
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'o') {
-                e.preventDefault();
-                document.getElementById('file-input').click();
-            }
-
             if (e.ctrlKey && e.key === 'l') {
                 e.preventDefault();
                 UI.clearLogs();

@@ -87,6 +87,22 @@ function initializeTabSwitching() {
     // Already handled by HTML onclick
 }
 
+// Keyboard shortcuts initialization
+function initializeKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'o') {
+            e.preventDefault();
+            const selectBtn = document.getElementById('select-files-btn');
+            if (selectBtn) {
+                selectBtn.click();
+            } else {
+                // Fallback se o botão não existir
+                document.getElementById('file-input').click();
+            }
+        }
+    });
+}
+
 // Drag and drop functionality
 function initializeDragAndDrop() {
     // Main drop zone
@@ -95,7 +111,19 @@ function initializeDragAndDrop() {
         mainDropZone.addEventListener('dragover', handleDragOver);
         mainDropZone.addEventListener('dragleave', handleDragLeave);
         mainDropZone.addEventListener('drop', handleDrop);
-        mainDropZone.addEventListener('click', () => {
+        mainDropZone.addEventListener('click', (e) => {
+            // Só abrir o seletor se não for um clique em botão
+            if (!e.target.closest('button')) {
+                document.getElementById('file-input').click();
+            }
+        });
+    }
+
+    // Botão de seleção de arquivos
+    const selectFilesBtn = document.getElementById('select-files-btn');
+    if (selectFilesBtn) {
+        selectFilesBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevenir propagação para o drop-zone
             document.getElementById('file-input').click();
         });
     }
