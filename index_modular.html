@@ -717,6 +717,7 @@
                 <!-- Single file inputs for specific operations -->
                 <input type="file" id="file-extract" accept=".pdf" class="hidden">
                 <input type="file" id="file-watermark" accept=".pdf" class="hidden">
+                <input type="file" id="file-rename" accept=".pdf" class="hidden">
 
                 <button id="select-files-btn" class="btn-base btn-primary">
                     <i class="fas fa-folder-open mr-2"></i>
@@ -751,6 +752,11 @@
                     data-tab="watermark" onclick="switchTab('watermark')">
                     <i class="fas fa-stamp mr-2"></i>
                     Marca d'água
+                </button>
+                <button class="tab-button flex-1 px-4 py-3 text-center font-medium text-gray-600 hover:bg-gray-100"
+                    data-tab="rename" onclick="switchTab('rename')">
+                    <i class="fas fa-edit mr-2"></i>
+                    Renomear
                 </button>
             </div>
 
@@ -981,6 +987,140 @@
                 <!-- File Info for Watermark -->
                 <div id="watermark-file-info" class="hidden mt-4"></div>
             </div>
+
+            <!-- Rename Tab -->
+            <div id="rename-tab" class="tab-content p-6">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Renomear e Dividir por Páginas</h3>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-medium mb-3">Configurações de Renomeação</h4>
+                        <div class="space-y-4">
+                            <!-- Layout Selector -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Layout do Documento:</label>
+                                <select id="rename-layout" class="select-base">
+                                    <option value="itau">Extrato Itaú - Comprovante PIX</option>
+                                    <option value="custom" disabled>Personalizado (em breve)</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">Selecione o tipo de documento para extração
+                                    automática</p>
+                            </div>
+
+                            <!-- Itaú Specific Options -->
+                            <div id="itau-options">
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <h5 class="font-medium text-blue-800 mb-2">
+                                        <i class="fas fa-university mr-2"></i>
+                                        Configurações Itaú
+                                    </h5>
+                                    <p class="text-blue-700 text-sm mb-3">
+                                        Extrai automaticamente o nome do recebedor e valor para renomear cada página.
+                                    </p>
+
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-sm font-medium text-blue-700 mb-1">Padrão de
+                                                Nome:</label>
+                                            <div class="bg-white p-2 rounded border border-blue-200 font-mono text-sm">
+                                                <span class="text-green-600">[Nome do Recebedor]</span> +
+                                                <span class="text-blue-600"> valor R$ </span> +
+                                                <span class="text-purple-600">[Valor]</span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-blue-700 mb-1">Exemplo:</label>
+                                            <div class="bg-gray-100 p-2 rounded text-sm">
+                                                João Silva valor R$ 150,00.pdf
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Custom Options (Future) -->
+                            <div id="custom-options" style="display: none;">
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                    <h5 class="font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-cog mr-2"></i>
+                                        Configurações Personalizadas
+                                    </h5>
+                                    <p class="text-gray-600 text-sm">
+                                        Em desenvolvimento - permitirá criar padrões customizados de extração.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium mb-3">Preview da Renomeação</h4>
+                        <div id="rename-preview" class="border border-gray-300 rounded-lg p-4 bg-gray-50 min-h-[200px]">
+                            <div class="text-center text-gray-500">
+                                <i class="fas fa-file-pdf text-3xl mb-2"></i>
+                                <p>Carregue um PDF para ver o preview da renomeação</p>
+                            </div>
+                        </div>
+
+                        <!-- Progress for rename -->
+                        <div id="rename-progress" class="mt-4 hidden">
+                            <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
+                                <span>Processando páginas...</span>
+                                <span id="rename-progress-text">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div id="rename-progress-bar" class="progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Info -->
+                <div id="rename-file-info" class="hidden mb-6 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-pdf text-red-500 text-2xl mr-3"></i>
+                            <div>
+                                <h5 class="font-medium text-gray-800" id="rename-file-name">arquivo.pdf</h5>
+                                <p class="text-sm text-gray-600">
+                                    <span id="rename-file-size">0 KB</span> •
+                                    <span id="rename-file-pages">0 páginas</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
+                                Pronto para processar
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3 mt-6">
+                    <button id="rename-process" class="btn-base btn-secondary btn-lg">
+                        <i class="fas fa-edit mr-2"></i>
+                        Processar e Renomear
+                    </button>
+                    <button id="rename-preview-btn" class="btn-base btn-outline">
+                        <i class="fas fa-eye mr-2"></i>
+                        Analisar Arquivo
+                    </button>
+                    <button id="rename-download-all" class="btn-base btn-primary hidden">
+                        <i class="fas fa-download mr-2"></i>
+                        Baixar Todos
+                    </button>
+                </div>
+
+                <!-- Results Section -->
+                <div id="rename-results" class="hidden mt-6">
+                    <h4 class="font-medium mb-3 text-gray-700">Páginas Processadas</h4>
+                    <div id="rename-results-list" class="space-y-2 max-h-60 overflow-y-auto">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Logs Section -->
@@ -1026,6 +1166,7 @@
     <script src="js/merge.js"></script>
     <script src="js/extract.js"></script>
     <script src="js/watermark.js"></script>
+    <script src="js/rename.js"></script>
     <script src="js/init.js"></script>
 
     <script>

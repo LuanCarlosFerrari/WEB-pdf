@@ -79,7 +79,8 @@ function getTabName(tabName) {
         split: 'Dividir',
         merge: 'Mesclar',
         extract: 'Extrair',
-        watermark: 'Marca d\'Água'
+        watermark: 'Marca d\'Água',
+        rename: 'Renomear'
     };
     return names[tabName] || tabName;
 }
@@ -236,7 +237,7 @@ function initializeFileInputs() {
     }
 
     // Single file inputs
-    ['extract', 'watermark'].forEach(operation => {
+    ['extract', 'watermark', 'rename'].forEach(operation => {
         const input = document.getElementById(`file-${operation}`);
         if (input) {
             input.addEventListener('change', (e) => {
@@ -328,7 +329,8 @@ function updateTabButtons(tabName) {
         'split': 'split-pdfs',
         'merge': 'merge-pdfs',
         'extract': 'extract-pages',
-        'watermark': 'add-watermark'
+        'watermark': 'add-watermark',
+        'rename': 'rename-process'
     };
 
     const buttonId = buttonMap[tabName];
@@ -393,6 +395,13 @@ function updateTabSpecificElements(tabName, pdfFiles) {
                 if (fileInfoContainer) {
                     fileInfoContainer.classList.add('hidden');
                 }
+            }
+            break;
+
+        case 'rename':
+            // Atualizar preview de renomeação
+            if (window.pdfRenamer && typeof window.pdfRenamer.updateRenamePreview === 'function') {
+                window.pdfRenamer.updateRenamePreview();
             }
             break;
     }
