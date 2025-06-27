@@ -11,8 +11,6 @@ class PDFSplitter {
     setupEventListeners() {
         const splitBtn = document.getElementById('split-pdfs');
         const previewBtn = document.getElementById('preview-split');
-        const clearBtn = document.getElementById('clear-split-file');
-        const fileInput = document.getElementById('file-split');
         const splitModeRadios = document.querySelectorAll('input[name="split-mode"]');
 
         if (splitBtn) {
@@ -23,16 +21,15 @@ class PDFSplitter {
             previewBtn.addEventListener('click', () => this.previewSplit());
         }
 
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => this.clearSplitFile());
-        }
-
-        if (fileInput) {
-            fileInput.addEventListener('change', (e) => this.handleFileSelection(e));
-        }
-
         splitModeRadios.forEach(radio => {
             radio.addEventListener('change', () => this.updateSplitOptions());
+        });
+
+        // Listen for files uploaded via general system
+        document.addEventListener('filesUploaded', (e) => {
+            if (CORE.getCurrentTab() === 'split') {
+                this.handleGeneralFileUpload(e.detail);
+            }
         });
 
         this.updateSplitOptions();
@@ -47,19 +44,24 @@ class PDFSplitter {
         }
     }
 
-    handleFileSelection(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+    handleGeneralFileUpload(files) {
+        if (!files || files.length === 0) return;
+
+        // Use the first file for split operation
+        const file = files[0];
 
         if (file.type !== 'application/pdf') {
             UI.showToast('Por favor, selecione apenas arquivos PDF', 'error');
-            event.target.value = '';
             return;
         }
 
         this.selectedFile = file;
         this.displayFileInfo(file);
         UI.addLog(`Arquivo selecionado para divisão: ${file.name}`);
+
+        if (files.length > 1) {
+            UI.showToast('Apenas o primeiro arquivo será usado para divisão', 'warning');
+        }
     }
 
     async displayFileInfo(file) {
@@ -86,23 +88,6 @@ class PDFSplitter {
         }
 
         fileInfoContainer.classList.remove('hidden');
-    }
-
-    clearSplitFile() {
-        const fileInput = document.getElementById('file-split');
-        const fileInfoContainer = document.getElementById('split-file-info');
-
-        if (fileInput) {
-            fileInput.value = '';
-        }
-
-        if (fileInfoContainer) {
-            fileInfoContainer.classList.add('hidden');
-        }
-
-        this.selectedFile = null;
-        UI.addLog('Arquivo de divisão removido');
-        UI.showToast('Arquivo removido', 'info');
     }
 
     previewSplit() {

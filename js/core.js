@@ -51,7 +51,7 @@ function switchTab(tabName) {
     currentTab = tabName;
 
     // Clear any previous uploads for single-file operations
-    if (['split', 'extract', 'watermark', 'excel'].includes(tabName)) {
+    if (['extract', 'watermark', 'excel'].includes(tabName)) {
         clearSingleFileUpload(tabName);
 
         // Keep watermark text field always enabled for user convenience
@@ -143,7 +143,7 @@ function initializeDragAndDrop() {
             } else if (zoneId.includes('merge')) {
                 document.getElementById('files-merge').click();
             } else if (zoneId.includes('split')) {
-                document.getElementById('file-split').click();
+                document.getElementById('file-input').click();
             } else if (zoneId.includes('extract')) {
                 document.getElementById('file-extract').click();
             } else if (zoneId.includes('watermark')) {
@@ -246,7 +246,7 @@ function initializeFileInputs() {
     }
 
     // Single file inputs
-    ['split', 'extract', 'watermark', 'excel'].forEach(operation => {
+    ['extract', 'watermark', 'excel'].forEach(operation => {
         const input = document.getElementById(`file-${operation}`);
         if (input) {
             input.addEventListener('change', (e) => {
