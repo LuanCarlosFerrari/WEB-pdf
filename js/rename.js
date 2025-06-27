@@ -282,21 +282,26 @@ class PDFRenamer {
                 result.value = this.formatValue(maxValue.toString());
             }
         }
-    }
-
-    extractBoletoData(text, result) {
+    } extractBoletoData(text, result) {
         console.log('🧾 Extraindo dados de Boleto');
+
+        // Debug: mostrar o texto que está sendo analisado
+        console.log('📝 Texto do boleto:', text.substring(0, 500));
 
         // Padrões específicos para Boleto
         const patterns = {
             // Beneficiário - captura até encontrar CPF/CNPJ ou nova linha
             recipient: /Benefici[aá]rio:\s*([A-Z][A-Z\s&.-]+?)(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i,
-            // Valor do pagamento (prioritário)
-            valuePayment: /Valor do pagamento[^:]*:\s*R?\$?\s*([\d.,]+)/i,
-            // Valor do boleto (alternativo)
-            valueBoleto: /Valor do boleto[^:]*:\s*R?\$?\s*([\d.,]+)/i,
-            // Padrão genérico para valor
-            valueGeneral: /(?:Valor|Total)[^:]*:\s*R?\$?\s*([\d.,]+)/i
+            // Valor do pagamento - padrão mais específico para o formato "(R$):"
+            valuePayment: /Valor do pagamento\s*\(R\$\):\s*([\d.,]+)/i,
+            // Valor do boleto - padrão mais específico
+            valueBoleto: /Valor do boleto\s*\(R\$\):\s*([\d.,]+)/i,
+            // Padrão alternativo sem parênteses
+            valuePaymentAlt: /Valor do pagamento[^:]*:\s*R?\$?\s*([\d.,]+)/i,
+            // Padrão mais genérico para qualquer valor em R$
+            valueGeneral: /(?:=|:)\s*(?:R\$)?\s*([\d]+\.?[\d]*,[\d]{2})/g,
+            // Padrão para capturar valores numéricos isolados que parecem monetários
+            valueNumeric: /([\d]{1,3}(?:\.[\d]{3})*,[\d]{2})/g
         };
 
         // Extrair beneficiário
@@ -312,20 +317,78 @@ class PDFRenamer {
             console.warn('⚠️ Beneficiário não encontrado no boleto');
         }
 
-        // Extrair valor (preferir valor do pagamento)
-        let valueMatch = text.match(patterns.valuePayment);
-        if (!valueMatch) {
-            valueMatch = text.match(patterns.valueBoleto);
-        }
-        if (!valueMatch) {
-            valueMatch = text.match(patterns.valueGeneral);
+        // Extrair valor - tentar múltiplos padrões
+        let valueMatch = null;
+        let matchedPattern = '';
+
+        // Tentar padrão específico do valor do pagamento
+        valueMatch = text.match(patterns.valuePayment);
+        if (valueMatch) {
+            matchedPattern = 'valuePayment';
         }
 
-        if (valueMatch) {
+        // Tentar padrão do valor do boleto
+        if (!valueMatch) {
+            valueMatch = text.match(patterns.valueBoleto);
+            if (valueMatch) {
+                matchedPattern = 'valueBoleto';
+            }
+        }
+
+        // Tentar padrão alternativo
+        if (!valueMatch) {
+            valueMatch = text.match(patterns.valuePaymentAlt);
+            if (valueMatch) {
+                matchedPattern = 'valuePaymentAlt';
+            }
+        }
+
+        // Tentar padrão genérico
+        if (!valueMatch) {
+            const generalMatches = [...text.matchAll(patterns.valueGeneral)];
+            if (generalMatches.length > 0) {
+                // Pegar o maior valor encontrado
+                const values = generalMatches.map(match => this.parseValue(match[1]));
+                const maxValue = Math.max(...values);
+                if (maxValue > 0) {
+                    valueMatch = [null, maxValue.toString().replace('.', ',')];
+                    matchedPattern = 'valueGeneral';
+                }
+            }
+        }
+
+        // Como último recurso, procurar qualquer padrão numérico monetário
+        if (!valueMatch) {
+            const numericMatches = [...text.matchAll(patterns.valueNumeric)];
+            if (numericMatches.length > 0) {
+                // Filtrar valores que podem ser valores monetários (> 1,00)
+                const monetaryValues = numericMatches
+                    .map(match => ({ value: this.parseValue(match[1]), original: match[1] }))
+                    .filter(item => item.value >= 1.00);
+
+                if (monetaryValues.length > 0) {
+                    // Pegar o maior valor
+                    const maxItem = monetaryValues.reduce((max, item) =>
+                        item.value > max.value ? item : max
+                    );
+                    valueMatch = [null, maxItem.original];
+                    matchedPattern = 'valueNumeric';
+                }
+            }
+        }
+
+        if (valueMatch && valueMatch[1]) {
             result.value = this.formatValue(valueMatch[1]);
-            console.log(`✅ Valor extraído: R$ ${result.value}`);
+            console.log(`✅ Valor extraído: R$ ${result.value} (padrão: ${matchedPattern})`);
         } else {
             console.warn('⚠️ Valor não encontrado no boleto');
+            console.log('🔍 Tentando encontrar qualquer valor no texto...');
+
+            // Debug: mostrar todos os números encontrados
+            const allNumbers = text.match(/[\d.,]+/g);
+            if (allNumbers) {
+                console.log('🔢 Números encontrados:', allNumbers);
+            }
         }
     }
 
@@ -355,14 +418,37 @@ class PDFRenamer {
     }
 
     parseValue(valueStr) {
-        // Converter string de valor para número
-        const cleanValue = valueStr.replace(/\./g, '').replace(',', '.');
-        return parseFloat(cleanValue) || 0;
+        if (!valueStr) return 0;
+
+        // Remover espaços e caracteres especiais
+        let cleanValue = valueStr.toString().trim();
+
+        // Se já está no formato brasileiro (ex: 27.296,82)
+        if (cleanValue.includes(',') && cleanValue.lastIndexOf(',') > cleanValue.lastIndexOf('.')) {
+            // Remover pontos (separadores de milhares) e trocar vírgula por ponto
+            cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
+        }
+        // Se está no formato americano (ex: 27,296.82)
+        else if (cleanValue.includes('.') && cleanValue.lastIndexOf('.') > cleanValue.lastIndexOf(',')) {
+            // Remover vírgulas (separadores de milhares)
+            cleanValue = cleanValue.replace(/,/g, '');
+        }
+        // Se tem apenas vírgula (ex: 123,45)
+        else if (cleanValue.includes(',') && !cleanValue.includes('.')) {
+            cleanValue = cleanValue.replace(',', '.');
+        }
+
+        const result = parseFloat(cleanValue) || 0;
+        console.log(`🔢 parseValue: "${valueStr}" -> "${cleanValue}" -> ${result}`);
+        return result;
     }
 
     formatValue(valueStr) {
         // Formatar valor para o padrão brasileiro
         const numValue = typeof valueStr === 'string' ? this.parseValue(valueStr) : valueStr;
+        if (isNaN(numValue) || numValue <= 0) {
+            return '0,00';
+        }
         return numValue.toFixed(2).replace('.', ',');
     }
 
