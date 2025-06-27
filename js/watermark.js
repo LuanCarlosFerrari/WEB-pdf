@@ -104,12 +104,6 @@ class PDFWatermarker {
             <div class="watermark-preview-container">
                 <div class="preview-page">
                     ${watermarkElements}
-                    <div class="preview-content" style="position: relative; z-index: 2; background: rgba(255,255,255,0.8); padding: 20px;">
-                        <p><strong>Conteúdo do PDF</strong></p>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-                        <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
-                        <p style="margin-top: 40px;">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
-                    </div>
                 </div>
             </div>
         `;
