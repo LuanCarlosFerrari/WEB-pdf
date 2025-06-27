@@ -232,6 +232,8 @@ class PDFSplitter {
         const firstFileName = `${baseName}_parte_1.pdf`;
         this.downloadPDF(firstHalfBytes, firstFileName);
 
+        let secondFileName = null;
+
         // Segunda metade
         if (totalPages > midPoint) {
             const secondHalf = await PDFLib.PDFDocument.create();
@@ -239,7 +241,7 @@ class PDFSplitter {
             secondHalfPages.forEach(page => secondHalf.addPage(page));
 
             const secondHalfBytes = await secondHalf.save();
-            const secondFileName = `${baseName}_parte_2.pdf`;
+            secondFileName = `${baseName}_parte_2.pdf`;
             this.downloadPDF(secondHalfBytes, secondFileName);
         }
 
