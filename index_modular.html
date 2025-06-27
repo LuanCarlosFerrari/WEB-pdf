@@ -769,36 +769,121 @@
             <div id="rename-tab" class="tab-content active p-6">
                 <h3 class="text-lg font-semibold mb-4 text-gray-700">Renomear Arquivos</h3>
 
-                <div class="grid md:grid-cols-2 gap-6">
-                    <div>
-                        <h4 class="font-medium mb-3">Adicionar Regra de Renomeação</h4>
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Encontrar:</label>
-                                <input type="text" id="rename-find" class="input-base"
-                                    placeholder="Texto a ser substituído">
+                <!-- Modo de Renomeação -->
+                <div class="mb-6">
+                    <h4 class="font-medium mb-3">Modo de Renomeação</h4>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                        <div class="flex items-center text-blue-700">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <span class="text-sm font-medium">Como era originalmente</span>
+                        </div>
+                        <p class="text-blue-600 text-xs mt-1">
+                            No sistema Python original, o módulo de renomeação extraía dados do conteúdo do PDF 
+                            (como remetente e valor) e renomeava o arquivo com base nessas informações extraídas.
+                            Agora você pode escolher entre substituição de texto simples ou extração de dados do conteúdo.
+                        </p>
+                    </div>
+                    <div class="flex gap-4">
+                        <label class="flex items-center">
+                            <input type="radio" name="rename-mode" value="text-replace" class="mr-2" checked>
+                            <span>Substituição de Texto</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="rename-mode" value="content-extraction" class="mr-2">
+                            <span>Extração de Dados do Conteúdo</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Seção de Substituição de Texto -->
+                <div id="text-replace-section" class="mb-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-medium mb-3">Adicionar Regra de Renomeação</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Encontrar:</label>
+                                    <input type="text" id="rename-find" class="input-base"
+                                        placeholder="Texto a ser substituído">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Substituir por:</label>
+                                    <input type="text" id="rename-replace" class="input-base"
+                                        placeholder="Novo texto (deixe vazio para remover)">
+                                </div>
+                                <div class="flex gap-2">
+                                    <button id="add-rename-rule" class="btn-base btn-secondary">
+                                        <i class="fas fa-plus mr-2"></i>Adicionar Regra
+                                    </button>
+                                    <button id="clear-rename-rules" class="btn-base btn-danger">
+                                        <i class="fas fa-trash mr-2"></i>Limpar Todas
+                                    </button>
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Substituir por:</label>
-                                <input type="text" id="rename-replace" class="input-base"
-                                    placeholder="Novo texto (deixe vazio para remover)">
-                            </div>
-                            <div class="flex gap-2">
-                                <button id="add-rename-rule" class="btn-base btn-secondary">
-                                    <i class="fas fa-plus mr-2"></i>Adicionar Regra
-                                </button>
-                                <button id="clear-rename-rules" class="btn-base btn-danger">
-                                    <i class="fas fa-trash mr-2"></i>Limpar Todas
-                                </button>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium mb-3">Regras Configuradas</h4>
+                            <div id="rename-rules-list"
+                                class="border border-gray-300 rounded-md p-3 min-h-32 max-h-64 overflow-y-auto">
+                                <p class="no-rules">Nenhuma regra adicionada</p>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div>
-                        <h4 class="font-medium mb-3">Regras Configuradas</h4>
-                        <div id="rename-rules-list"
-                            class="border border-gray-300 rounded-md p-3 min-h-32 max-h-64 overflow-y-auto">
-                            <p class="no-rules">Nenhuma regra adicionada</p>
+                <!-- Seção de Extração de Dados -->
+                <div id="content-extraction-section" class="mb-6" style="display: none;">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-medium mb-3">Configurar Extração de Dados</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Campo a Extrair:</label>
+                                    <select id="extraction-field" class="input-base">
+                                        <option value="remetente">Remetente</option>
+                                        <option value="valor">Valor</option>
+                                        <option value="data">Data</option>
+                                        <option value="numero">Número do Documento</option>
+                                        <option value="custom">Personalizado</option>
+                                    </select>
+                                </div>
+                                <div id="custom-pattern-div" style="display: none;">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Padrão Regex:</label>
+                                    <input type="text" id="custom-pattern" class="input-base"
+                                        placeholder="Ex: /R\$\s*(\d+[,.]?\d*)/i">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Posição no Nome:</label>
+                                    <select id="extraction-position" class="input-base">
+                                        <option value="prefix">Prefixo</option>
+                                        <option value="suffix">Sufixo</option>
+                                        <option value="replace">Substituir Nome Completo</option>
+                                    </select>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button id="add-extraction-rule" class="btn-base btn-secondary">
+                                        <i class="fas fa-plus mr-2"></i>Adicionar Extração
+                                    </button>
+                                    <button id="clear-extraction-rules" class="btn-base btn-danger">
+                                        <i class="fas fa-trash mr-2"></i>Limpar Todas
+                                    </button>
+                                    <button id="add-example-extractions" class="btn-base btn-info">
+                                        <i class="fas fa-magic mr-2"></i>Exemplos
+                                    </button>
+                                    <button id="test-content-extraction" class="btn-base btn-warning">
+                                        <i class="fas fa-flask mr-2"></i>Testar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium mb-3">Regras de Extração</h4>
+                            <div id="extraction-rules-list"
+                                class="border border-gray-300 rounded-md p-3 min-h-32 max-h-64 overflow-y-auto">
+                                <p class="no-rules">Nenhuma regra de extração adicionada</p>
+                            </div>
                         </div>
                     </div>
                 </div>
