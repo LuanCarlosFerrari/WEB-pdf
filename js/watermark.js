@@ -15,7 +15,13 @@ class PDFWatermarker {
         const resetBtn = document.getElementById('reset-watermark-settings');
 
         if (watermarkBtn) {
-            watermarkBtn.addEventListener('click', () => this.addWatermarkToPDFs());
+            watermarkBtn.addEventListener('click', () => {
+                console.log('🔄 Botão de marca d\'água clicado');
+                this.addWatermarkToPDFs();
+            });
+            console.log('✅ Event listener adicionado ao botão add-watermark');
+        } else {
+            console.error('❌ Botão add-watermark não encontrado');
         }
 
         if (previewBtn) {

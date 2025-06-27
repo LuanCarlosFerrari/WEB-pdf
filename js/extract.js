@@ -13,7 +13,13 @@ class PDFExtractor {
         const modeRadios = document.querySelectorAll('input[name="extract-mode"]');
 
         if (extractBtn) {
-            extractBtn.addEventListener('click', () => this.extractPages());
+            extractBtn.addEventListener('click', () => {
+                console.log('🔄 Botão de extração clicado');
+                this.extractPages();
+            });
+            console.log('✅ Event listener adicionado ao botão extract-pages');
+        } else {
+            console.error('❌ Botão extract-pages não encontrado');
         }
 
         modeRadios.forEach(radio => {
@@ -23,7 +29,10 @@ class PDFExtractor {
         this.updateExtractOptions();
 
         // Atualizar preview quando arquivos forem carregados
-        document.addEventListener('filesUploaded', () => this.updateExtractPreview());
+        document.addEventListener('filesUploaded', () => {
+            console.log('📁 Arquivos carregados - atualizando preview de extração');
+            this.updateExtractPreview();
+        });
     }
 
     updateExtractOptions() {

@@ -13,6 +13,11 @@ window.CORE = {
         uploadedFiles = files;
         // Dispatch event for modules
         document.dispatchEvent(new CustomEvent('filesUploaded', { detail: files }));
+
+        // Atualizar botões da aba atual quando arquivos são carregados
+        if (typeof updateTabButtons === 'function') {
+            updateTabButtons(currentTab);
+        }
     },
 
     getCurrentTab: function () {
@@ -50,16 +55,14 @@ function switchTab(tabName) {
 
     currentTab = tabName;
 
-    // Clear any previous uploads for single-file operations
-    if (['extract', 'watermark', 'excel'].includes(tabName)) {
-        clearSingleFileUpload(tabName);
+    // Atualizar estado dos botões baseado nos arquivos carregados
+    updateTabButtons(tabName);
 
-        // Keep watermark text field always enabled for user convenience
-        if (tabName === 'watermark') {
-            const watermarkText = document.getElementById('watermark-text');
-            if (watermarkText) {
-                watermarkText.disabled = false;
-            }
+    // Keep watermark text field always enabled for user convenience
+    if (tabName === 'watermark') {
+        const watermarkText = document.getElementById('watermark-text');
+        if (watermarkText) {
+            watermarkText.disabled = false;
         }
     }
 
@@ -328,6 +331,70 @@ function routeFilesToCurrentTab(files) {
     }
 }
 
+// Função para atualizar estado dos botões baseado nos arquivos carregados
+function updateTabButtons(tabName) {
+    const files = uploadedFiles || [];
+    const pdfFiles = files.filter(file => file.type === 'application/pdf');
+
+    // Map de botões por aba
+    const buttonMap = {
+        'rename': 'process-rename-files',
+        'split': 'split-pdfs',
+        'merge': 'merge-pdfs',
+        'extract': 'extract-pages',
+        'watermark': 'add-watermark',
+        'excel': 'convert-to-excel'
+    };
+
+    const buttonId = buttonMap[tabName];
+    if (!buttonId) return;
+
+    const button = document.getElementById(buttonId);
+    if (!button) return;
+
+    // Habilitar botão se há arquivos PDF carregados
+    if (pdfFiles.length > 0) {
+        button.disabled = false;
+        console.log(`✅ Botão ${buttonId} habilitado (${pdfFiles.length} PDF(s) disponível(eis))`);
+    } else {
+        button.disabled = true;
+        console.log(`⚠️ Botão ${buttonId} desabilitado (nenhum PDF carregado)`);
+    }
+
+    // Atualizar também outros elementos específicos da aba
+    updateTabSpecificElements(tabName, pdfFiles);
+}
+
+// Função para atualizar elementos específicos de cada aba
+function updateTabSpecificElements(tabName, pdfFiles) {
+    switch (tabName) {
+        case 'extract':
+            // Atualizar preview e input de páginas se necessário
+            if (window.pdfExtractor && typeof window.pdfExtractor.updateExtractPreview === 'function') {
+                window.pdfExtractor.updateExtractPreview();
+            }
+            break;
+
+        case 'watermark':
+            // Garantir que o campo de texto está habilitado
+            const watermarkText = document.getElementById('watermark-text');
+            if (watermarkText) {
+                watermarkText.disabled = false;
+            }
+            break;
+
+        case 'split':
+            // Atualizar informações do arquivo se há arquivo selecionado
+            if (pdfFiles.length > 0 && window.pdfSplitter) {
+                const file = pdfFiles[0];
+                if (typeof window.pdfSplitter.displayFileInfo === 'function') {
+                    window.pdfSplitter.displayFileInfo(file);
+                }
+            }
+            break;
+    }
+}
+
 // Handle multiple files upload
 function handleMultipleFiles(files, operation) {
     if (isProcessing) {
@@ -490,7 +557,7 @@ function enableOperationControls(operation) {
     }
 }
 
-// Clear single file upload
+// Clear single file upload (mantido para compatibilidade, mas não desabilita mais botões)
 function clearSingleFileUpload(operation) {
     const infoContainer = document.getElementById(`${operation}-file-info`);
     if (infoContainer) {
@@ -502,24 +569,15 @@ function clearSingleFileUpload(operation) {
     const fileInput = document.getElementById(`file-${operation}`);
     if (fileInput) fileInput.value = '';
 
-    // Map operation names to actual button IDs
-    const buttonMap = {
-        'split': 'split-pdfs',
-        'extract': 'extract-pages',
-        'watermark': 'add-watermark',
-        'excel': 'convert-to-excel'
-    };
+    // REMOVIDO: Não desabilitamos mais botões automaticamente
+    // porque agora usamos o sistema de upload geral
 
-    const buttonId = buttonMap[operation] || `${operation}-btn`;
-    const button = document.getElementById(buttonId);
-    if (button) button.disabled = true;
-
-    // Disable specific inputs
+    // Limpar apenas inputs específicos se necessário
     if (operation === 'extract') {
         const pagesInput = document.getElementById('pages-input');
         if (pagesInput) {
-            pagesInput.disabled = true;
             pagesInput.value = '';
+            // Não desabilitamos mais automaticamente
         }
     } else if (operation === 'watermark') {
         const watermarkText = document.getElementById('watermark-text');
@@ -725,6 +783,19 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
+// Inicializar estado dos botões quando o DOM estiver pronto
+document.addEventListener('DOMContentLoaded', function () {
+    // Aguardar um pouco para garantir que todos os módulos foram carregados
+    setTimeout(() => {
+        // Inicializar estado dos botões da aba atual
+        if (typeof updateTabButtons === 'function') {
+            updateTabButtons(currentTab || 'rename');
+        }
+
+        console.log('🔧 Estado inicial dos botões configurado');
+    }, 100);
+});
+
 // Debug functions for testing (remove in production)
 window.debugUpload = {
     test: function () {
@@ -763,4 +834,43 @@ window.debugUpload = {
     }
 };
 
-console.log('Debug functions available: window.debugUpload.test() and window.debugUpload.simulateFileUpload()');
+// Debug function para monitorar estado dos botões
+window.debugButtons = {
+    checkButtonStates: function () {
+        const buttons = [
+            'process-rename-files',
+            'split-pdfs',
+            'merge-pdfs',
+            'extract-pages',
+            'add-watermark',
+            'convert-to-excel'
+        ];
+
+        console.log('=== ESTADO DOS BOTÕES ===');
+        buttons.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                console.log(`${id}: ${btn.disabled ? 'DESABILITADO' : 'HABILITADO'}`);
+            } else {
+                console.log(`${id}: NÃO ENCONTRADO`);
+            }
+        });
+
+        const files = CORE.getUploadedFiles();
+        console.log(`Arquivos carregados: ${files.length}`);
+        console.log(`Aba atual: ${CORE.getCurrentTab()}`);
+        console.log('=========================');
+    },
+
+    forceUpdateButtons: function () {
+        console.log('🔄 Forçando atualização dos botões...');
+        if (typeof updateTabButtons === 'function') {
+            updateTabButtons(CORE.getCurrentTab());
+            this.checkButtonStates();
+        } else {
+            console.error('❌ Função updateTabButtons não encontrada');
+        }
+    }
+};
+
+console.log('🔧 Debug disponível: window.debugButtons.checkButtonStates() e window.debugButtons.forceUpdateButtons()');
