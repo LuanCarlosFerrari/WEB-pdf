@@ -171,67 +171,39 @@ class PDFRenamer {
             UI.hideProgress();
             UI.showToast('Erro ao analisar arquivo: ' + error.message, 'error');
         }
-    }
-
-    extractItauData(text, pageNum) {
+    } extractItauData(text, pageNum) {
         console.log('🏦 Extraindo dados do Itaú da página', pageNum);
-
-        // Patterns for Itaú PIX receipts
-        const patterns = {
-            // Busca por padrões de valor em Real
-            value: /R\$\s*([\d.,]+)/g,
-            // Busca por nomes (após "Para:" ou "Recebedor:" ou padrões similares)
-            recipient: /(?:Para:|Recebedor:|Favorecido:)\s*([A-ZÁÊÇÕÜÚ][a-záêçõüú\s]+(?:[A-ZÁÊÇÕÜÚ][a-záêçõüú\s]*)*)/i,
-            // Busca alternativa por nomes em maiúsculo
-            recipientAlt: /\b([A-ZÁÊÇÕÜÚ]{2,}(?:\s+[A-ZÁÊÇÕÜÚ]{2,})*)\b/g,
-            // Busca por CPF/CNPJ para validar contexto
-            document: /\b\d{3}\.\d{3}\.\d{3}-\d{2}\b|\b\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}\b/g
-        };
 
         const result = {
             pageNumber: pageNum,
             recipient: 'Destinatário não encontrado',
             value: '0,00',
+            type: 'Desconhecido',
             rawText: text.substring(0, 200) + '...',
             success: false
         };
 
         try {
-            // Extract value
-            const valueMatches = [...text.matchAll(patterns.value)];
-            if (valueMatches.length > 0) {
-                // Get the largest value found (usually the transfer amount)
-                const values = valueMatches.map(match => {
-                    const cleanValue = match[1].replace(/\./g, '').replace(',', '.');
-                    return parseFloat(cleanValue);
-                }).filter(v => !isNaN(v));
+            // Detectar tipo de comprovante
+            const documentType = this.detectItauDocumentType(text);
+            result.type = documentType;
 
-                if (values.length > 0) {
-                    const maxValue = Math.max(...values);
-                    result.value = maxValue.toFixed(2).replace('.', ',');
-                }
-            }
+            console.log(`📄 Tipo de documento detectado: ${documentType}`);
 
-            // Extract recipient name
-            let recipientMatch = text.match(patterns.recipient);
-            if (recipientMatch) {
-                result.recipient = recipientMatch[1].trim();
-                result.success = true;
-            } else {
-                // Try alternative pattern - look for names in caps
-                const altMatches = [...text.matchAll(patterns.recipientAlt)];
-                if (altMatches.length > 0) {
-                    // Filter out common bank terms
-                    const bankTerms = ['PIX', 'BANCO', 'ITAU', 'TRANSFERENCIA', 'COMPROVANTE', 'AGENCIA', 'CONTA'];
-                    const candidates = altMatches
-                        .map(match => match[1].trim())
-                        .filter(name => name.length >= 4 && !bankTerms.some(term => name.includes(term)));
-
-                    if (candidates.length > 0) {
-                        result.recipient = this.formatName(candidates[0]);
-                        result.success = true;
-                    }
-                }
+            // Extrair dados baseado no tipo
+            switch (documentType) {
+                case 'PIX':
+                    this.extractPixData(text, result);
+                    break;
+                case 'Boleto':
+                    this.extractBoletoData(text, result);
+                    break;
+                case 'TED':
+                    this.extractTedData(text, result);
+                    break;
+                default:
+                    console.warn(`⚠️ Tipo de documento não reconhecido para página ${pageNum}`);
+                    break;
             }
 
             console.log(`📊 Dados extraídos da página ${pageNum}:`, result);
@@ -241,6 +213,157 @@ class PDFRenamer {
         }
 
         return result;
+    }
+
+    detectItauDocumentType(text) {
+        // Normalizar texto para facilitar detecção
+        const normalizedText = text.toUpperCase().replace(/\s+/g, ' ');
+
+        // Detectar PIX - deve ser verificado primeiro pois pode ter overlap com outros
+        if (normalizedText.includes('PIX TRANSFERENCIA') ||
+            normalizedText.includes('COMPROVANTE DE TRANSFERENCIA') ||
+            normalizedText.includes('NOME DO RECEBEDOR:')) {
+            return 'PIX';
+        }
+
+        // Detectar TED - verificar antes de Boleto pois TED pode ter "pagamento"
+        if (normalizedText.includes('COMPROVANTE DE PAGAMENTO') &&
+            (normalizedText.includes('TED C') || normalizedText.includes('TED'))) {
+            return 'TED';
+        }
+
+        if (normalizedText.includes('NOME DO FAVORECIDO:') ||
+            normalizedText.includes('VALOR DA TED:')) {
+            return 'TED';
+        }
+
+        // Detectar Boleto
+        if (normalizedText.includes('BENEFICIARIO:') ||
+            normalizedText.includes('VALOR DO BOLETO') ||
+            normalizedText.includes('VALOR DO PAGAMENTO') ||
+            (normalizedText.includes('DADOS DO PAGAMENTO') && normalizedText.includes('BOLETO'))) {
+            return 'Boleto';
+        }
+
+        return 'Desconhecido';
+    }
+
+    extractPixData(text, result) {
+        console.log('📱 Extraindo dados de PIX');
+
+        // Padrões específicos para PIX
+        const patterns = {
+            // Nome do recebedor (aparece após "nome do recebedor:")
+            recipient: /nome do recebedor:\s*([A-ZÁÊÇÕÜÚ\s]+)/i,
+            // Valor da transação
+            value: /valor:\s*R\$\s*([\d.,]+)/i,
+            // Valor alternativo
+            valueAlt: /R\$\s*([\d.,]+)/g
+        };
+
+        // Extrair destinatário
+        const recipientMatch = text.match(patterns.recipient);
+        if (recipientMatch) {
+            result.recipient = this.formatName(recipientMatch[1].trim());
+            result.success = true;
+        }
+
+        // Extrair valor
+        let valueMatch = text.match(patterns.value);
+        if (valueMatch) {
+            result.value = this.formatValue(valueMatch[1]);
+        } else {
+            // Tentar padrão alternativo
+            const valueMatches = [...text.matchAll(patterns.valueAlt)];
+            if (valueMatches.length > 0) {
+                // Pegar o maior valor (provavelmente o valor da transferência)
+                const values = valueMatches.map(match => this.parseValue(match[1]));
+                const maxValue = Math.max(...values);
+                result.value = this.formatValue(maxValue.toString());
+            }
+        }
+    }
+
+    extractBoletoData(text, result) {
+        console.log('🧾 Extraindo dados de Boleto');
+
+        // Padrões específicos para Boleto
+        const patterns = {
+            // Beneficiário - captura até encontrar CPF/CNPJ ou nova linha
+            recipient: /Benefici[aá]rio:\s*([A-Z][A-Z\s&.-]+?)(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i,
+            // Valor do pagamento (prioritário)
+            valuePayment: /Valor do pagamento[^:]*:\s*R?\$?\s*([\d.,]+)/i,
+            // Valor do boleto (alternativo)
+            valueBoleto: /Valor do boleto[^:]*:\s*R?\$?\s*([\d.,]+)/i,
+            // Padrão genérico para valor
+            valueGeneral: /(?:Valor|Total)[^:]*:\s*R?\$?\s*([\d.,]+)/i
+        };
+
+        // Extrair beneficiário
+        const recipientMatch = text.match(patterns.recipient);
+        if (recipientMatch) {
+            let beneficiario = recipientMatch[1].trim();
+            // Limpar texto extra que pode vir junto
+            beneficiario = beneficiario.replace(/\s+/g, ' ').trim();
+            result.recipient = this.formatName(beneficiario);
+            result.success = true;
+            console.log(`✅ Beneficiário extraído: ${result.recipient}`);
+        } else {
+            console.warn('⚠️ Beneficiário não encontrado no boleto');
+        }
+
+        // Extrair valor (preferir valor do pagamento)
+        let valueMatch = text.match(patterns.valuePayment);
+        if (!valueMatch) {
+            valueMatch = text.match(patterns.valueBoleto);
+        }
+        if (!valueMatch) {
+            valueMatch = text.match(patterns.valueGeneral);
+        }
+
+        if (valueMatch) {
+            result.value = this.formatValue(valueMatch[1]);
+            console.log(`✅ Valor extraído: R$ ${result.value}`);
+        } else {
+            console.warn('⚠️ Valor não encontrado no boleto');
+        }
+    }
+
+    extractTedData(text, result) {
+        console.log('🏛️ Extraindo dados de TED');
+
+        // Padrões específicos para TED
+        const patterns = {
+            // Nome do favorecido
+            recipient: /Nome do favorecido:\s*([A-ZÁÊÇÕÜÚ\s]+?)(?:\s+CPF|$)/i,
+            // Valor da TED
+            value: /Valor da TED:\s*R\$\s*([\d.,]+)/i
+        };
+
+        // Extrair favorecido
+        const recipientMatch = text.match(patterns.recipient);
+        if (recipientMatch) {
+            result.recipient = this.formatName(recipientMatch[1].trim());
+            result.success = true;
+        }
+
+        // Extrair valor
+        const valueMatch = text.match(patterns.value);
+        if (valueMatch) {
+            result.value = this.formatValue(valueMatch[1]);
+        }
+    }
+
+    parseValue(valueStr) {
+        // Converter string de valor para número
+        const cleanValue = valueStr.replace(/\./g, '').replace(',', '.');
+        return parseFloat(cleanValue) || 0;
+    }
+
+    formatValue(valueStr) {
+        // Formatar valor para o padrão brasileiro
+        const numValue = typeof valueStr === 'string' ? this.parseValue(valueStr) : valueStr;
+        return numValue.toFixed(2).replace('.', ',');
     }
 
     extractCustomData(text, pageNum) {
@@ -255,8 +378,26 @@ class PDFRenamer {
     }
 
     formatName(name) {
-        // Convert to title case
-        return name.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+        if (!name) return 'Nome não encontrado';
+
+        // Limpar espaços extras
+        let cleanName = name.trim().replace(/\s+/g, ' ');
+
+        // Se o nome está todo em maiúscula (como nomes de empresas), manter o formato original
+        if (cleanName === cleanName.toUpperCase()) {
+            // Para empresas, converter para título mas manter algumas palavras específicas em maiúscula
+            const wordsToKeepUpper = ['LTDA', 'SA', 'ME', 'EPP', 'EIRELI', 'DO', 'DA', 'DE', 'E'];
+            return cleanName.toLowerCase().replace(/\b\w+/g, (word) => {
+                const upperWord = word.toUpperCase();
+                if (wordsToKeepUpper.includes(upperWord)) {
+                    return upperWord;
+                }
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            });
+        }
+
+        // Para nomes normais, converter para título
+        return cleanName.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
     }
 
     updatePreviewWithData() {
@@ -282,12 +423,19 @@ class PDFRenamer {
             const statusClass = data.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
             const statusIcon = data.success ? 'fas fa-check-circle text-green-600' : 'fas fa-exclamation-triangle text-red-600';
 
+            // Ícone baseado no tipo de documento
+            const typeIcon = this.getTypeIcon(data.type);
+            const typeColor = this.getTypeColor(data.type);
+
             html += `
                 <div class="p-3 border rounded-lg ${statusClass}">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center">
                             <i class="${statusIcon} mr-2"></i>
                             <span class="font-medium">Página ${data.pageNumber}</span>
+                            <span class="ml-2 px-2 py-1 text-xs rounded-full ${typeColor}">
+                                <i class="${typeIcon} mr-1"></i>${data.type}
+                            </span>
                         </div>
                         <span class="text-xs text-gray-500">
                             ${data.success ? 'Dados extraídos' : 'Falha na extração'}
@@ -307,6 +455,26 @@ class PDFRenamer {
 
         html += '</div>';
         preview.innerHTML = html;
+    }
+
+    getTypeIcon(type) {
+        const icons = {
+            'PIX': 'fas fa-mobile-alt',
+            'Boleto': 'fas fa-barcode',
+            'TED': 'fas fa-university',
+            'Desconhecido': 'fas fa-question-circle'
+        };
+        return icons[type] || icons['Desconhecido'];
+    }
+
+    getTypeColor(type) {
+        const colors = {
+            'PIX': 'bg-blue-100 text-blue-800',
+            'Boleto': 'bg-orange-100 text-orange-800',
+            'TED': 'bg-purple-100 text-purple-800',
+            'Desconhecido': 'bg-gray-100 text-gray-800'
+        };
+        return colors[type] || colors['Desconhecido'];
     }
 
     async processAndRename() {

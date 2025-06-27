@@ -1000,11 +1000,10 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Layout do Documento:</label>
                                 <select id="rename-layout" class="select-base">
-                                    <option value="itau">Extrato Itaú - Comprovante PIX</option>
+                                    <option value="itau">Extratos Itaú - PIX, Boleto e TED</option>
                                     <option value="custom" disabled>Personalizado (em breve)</option>
                                 </select>
-                                <p class="text-xs text-gray-500 mt-1">Selecione o tipo de documento para extração
-                                    automática</p>
+                                <p class="text-xs text-gray-500 mt-1">Suporta comprovantes PIX, Boleto e TED do Itaú</p>
                             </div>
 
                             <!-- Itaú Specific Options -->
@@ -1015,15 +1014,42 @@
                                         Configurações Itaú
                                     </h5>
                                     <p class="text-blue-700 text-sm mb-3">
-                                        Extrai automaticamente o nome do recebedor e valor para renomear cada página.
+                                        Detecta automaticamente e extrai dados de comprovantes PIX, Boletos e TEDs do
+                                        Itaú.
                                     </p>
 
                                     <div class="space-y-3">
                                         <div>
+                                            <label class="block text-sm font-medium text-blue-700 mb-1">Tipos
+                                                Suportados:</label>
+                                            <div class="space-y-1">
+                                                <div class="flex items-center text-sm">
+                                                    <i class="fas fa-mobile-alt text-blue-600 mr-2"></i>
+                                                    <span
+                                                        class="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">PIX</span>
+                                                    <span class="text-gray-600">Comprovantes de transferência PIX</span>
+                                                </div>
+                                                <div class="flex items-center text-sm">
+                                                    <i class="fas fa-barcode text-orange-600 mr-2"></i>
+                                                    <span
+                                                        class="bg-orange-100 text-orange-800 px-2 py-1 rounded mr-2">Boleto</span>
+                                                    <span class="text-gray-600">Comprovantes de pagamento de
+                                                        boleto</span>
+                                                </div>
+                                                <div class="flex items-center text-sm">
+                                                    <i class="fas fa-university text-purple-600 mr-2"></i>
+                                                    <span
+                                                        class="bg-purple-100 text-purple-800 px-2 py-1 rounded mr-2">TED</span>
+                                                    <span class="text-gray-600">Comprovantes de TED</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
                                             <label class="block text-sm font-medium text-blue-700 mb-1">Padrão de
                                                 Nome:</label>
                                             <div class="bg-white p-2 rounded border border-blue-200 font-mono text-sm">
-                                                <span class="text-green-600">[Nome do Recebedor]</span> +
+                                                <span class="text-green-600">[Nome do Destinatário]</span> +
                                                 <span class="text-blue-600"> valor R$ </span> +
                                                 <span class="text-purple-600">[Valor]</span>
                                             </div>
@@ -1032,7 +1058,7 @@
                                         <div>
                                             <label class="block text-sm font-medium text-blue-700 mb-1">Exemplo:</label>
                                             <div class="bg-gray-100 p-2 rounded text-sm">
-                                                João Silva valor R$ 150,00.pdf
+                                                GOODYEAR DO BRASIL valor R$ 27.296,82.pdf
                                             </div>
                                         </div>
                                     </div>
