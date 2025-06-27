@@ -53,6 +53,14 @@ function switchTab(tabName) {
     // Clear any previous uploads for single-file operations
     if (['split', 'extract', 'watermark', 'excel'].includes(tabName)) {
         clearSingleFileUpload(tabName);
+
+        // Keep watermark text field always enabled for user convenience
+        if (tabName === 'watermark') {
+            const watermarkText = document.getElementById('watermark-text');
+            if (watermarkText) {
+                watermarkText.disabled = false;
+            }
+        }
     }
 
     if (typeof addLog === 'function') {
@@ -488,8 +496,10 @@ function clearSingleFileUpload(operation) {
     } else if (operation === 'watermark') {
         const watermarkText = document.getElementById('watermark-text');
         if (watermarkText) {
-            watermarkText.disabled = true;
-            watermarkText.value = '';
+            // Don't disable the text field - user should be able to type before uploading file
+            // watermarkText.disabled = true;
+            // Only clear the value if needed
+            // watermarkText.value = '';
         }
     }
 }

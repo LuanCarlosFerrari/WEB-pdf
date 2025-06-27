@@ -220,6 +220,23 @@
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
         }
 
+        /* ===== WATERMARK INPUT FIX ===== */
+        #watermark-text {
+            position: relative;
+            z-index: 1;
+            pointer-events: auto;
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+        }
+
+        #watermark-text:focus {
+            outline: none !important;
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        }
+
         /* ===== SELECT PADRONIZADO ===== */
         .select-base {
             width: 100%;
@@ -962,9 +979,10 @@
                         <h4 class="font-medium mb-3">Configurações da Marca d'água</h4>
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Texto:</label>
-                                <input type="text" id="watermark-text" class="input-base"
-                                    placeholder="Texto da marca d'água">
+                                <label class="block text-sm font-medium text-gray-700 mb-1"
+                                    for="watermark-text">Texto:</label>
+                                <input type="text" id="watermark-text" name="watermark-text" class="input-base"
+                                    placeholder="Texto da marca d'água" autocomplete="off" spellcheck="false">
                             </div>
 
                             <div class="grid grid-cols-2 gap-3">
@@ -1173,6 +1191,43 @@
             updateRangeDisplay('watermark-size', 'px');
             updateRangeDisplay('watermark-opacity', '%');
             updateRangeDisplay('watermark-rotation', '°');
+
+            // Fix específico para o campo de texto da marca d'água
+            const watermarkTextInput = document.getElementById('watermark-text');
+            if (watermarkTextInput) {
+                // Garantir que o campo está habilitado e funcional
+                watermarkTextInput.disabled = false;
+                watermarkTextInput.readOnly = false;
+                watermarkTextInput.setAttribute('contenteditable', 'true');
+
+                // Forçar foco se necessário
+                watermarkTextInput.addEventListener('click', function () {
+                    this.focus();
+                });
+
+                // Debug para verificar se está funcionando
+                watermarkTextInput.addEventListener('input', function () {
+                    console.log('Texto digitado na marca d\'água:', this.value);
+                });
+
+                console.log('Campo de texto da marca d\'água configurado:', watermarkTextInput);
+
+                // Re-habilitar o campo após qualquer mudança de aba
+                const observer = new MutationObserver(function (mutations) {
+                    mutations.forEach(function (mutation) {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'disabled') {
+                            if (watermarkTextInput.disabled) {
+                                console.log('Campo de marca d\'água foi desabilitado, re-habilitando...');
+                                setTimeout(() => {
+                                    watermarkTextInput.disabled = false;
+                                }, 10);
+                            }
+                        }
+                    });
+                });
+
+                observer.observe(watermarkTextInput, { attributes: true });
+            }
         });
 
         // Keyboard shortcuts

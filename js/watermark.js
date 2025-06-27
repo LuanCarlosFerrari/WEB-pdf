@@ -42,7 +42,29 @@ class PDFWatermarker {
         inputs.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
-                element.addEventListener('input', () => this.updateWatermarkPreview());
+                // Debug especial para o campo de texto
+                if (id === 'watermark-text') {
+                    console.log('Configurando eventos para campo de texto da marca d\'água');
+
+                    // Múltiplos eventos para garantir funcionalidade
+                    ['input', 'keyup', 'change', 'paste'].forEach(eventType => {
+                        element.addEventListener(eventType, (e) => {
+                            console.log(`Evento ${eventType} no campo de texto:`, e.target.value);
+                            this.updateWatermarkPreview();
+                        });
+                    });
+
+                    // Verificar se o campo está focusável
+                    element.addEventListener('focus', () => {
+                        console.log('Campo de texto focado');
+                    });
+
+                    element.addEventListener('blur', () => {
+                        console.log('Campo de texto perdeu o foco');
+                    });
+                } else {
+                    element.addEventListener('input', () => this.updateWatermarkPreview());
+                }
             }
         });
 
