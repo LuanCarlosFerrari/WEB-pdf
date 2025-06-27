@@ -10,10 +10,25 @@ class PDFSplitter {
 
     setupEventListeners() {
         const splitBtn = document.getElementById('split-pdfs');
+        const previewBtn = document.getElementById('preview-split');
+        const clearBtn = document.getElementById('clear-split-file');
+        const fileInput = document.getElementById('file-split');
         const splitModeRadios = document.querySelectorAll('input[name="split-mode"]');
 
         if (splitBtn) {
             splitBtn.addEventListener('click', () => this.splitPDFs());
+        }
+
+        if (previewBtn) {
+            previewBtn.addEventListener('click', () => this.previewSplit());
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => this.clearSplitFile());
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => this.handleFileSelection(e));
         }
 
         splitModeRadios.forEach(radio => {
@@ -32,22 +47,127 @@ class PDFSplitter {
         }
     }
 
-    async splitPDFs() {
-        const files = CORE.getUploadedFiles().filter(file => file.type === 'application/pdf');
+    handleFileSelection(event) {
+        const file = event.target.files[0];
+        if (!file) return;
 
-        if (files.length === 0) {
-            UI.showToast('Nenhum arquivo PDF carregado', 'warning');
+        if (file.type !== 'application/pdf') {
+            UI.showToast('Por favor, selecione apenas arquivos PDF', 'error');
+            event.target.value = '';
+            return;
+        }
+
+        this.selectedFile = file;
+        this.displayFileInfo(file);
+        UI.addLog(`Arquivo selecionado para divisão: ${file.name}`);
+    }
+
+    async displayFileInfo(file) {
+        const fileInfoContainer = document.getElementById('split-file-info');
+        const fileName = document.getElementById('split-file-name');
+        const fileSize = document.getElementById('split-file-size');
+        const filePages = document.getElementById('split-file-pages');
+
+        if (!fileInfoContainer) return;
+
+        // Exibir informações básicas
+        fileName.textContent = file.name;
+        fileSize.textContent = this.formatFileSize(file.size);
+
+        // Tentar obter o número de páginas
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+            const pageCount = pdfDoc.getPageCount();
+            filePages.textContent = `${pageCount} página${pageCount !== 1 ? 's' : ''}`;
+        } catch (error) {
+            console.warn('Erro ao obter informações do PDF:', error);
+            filePages.textContent = 'Informação não disponível';
+        }
+
+        fileInfoContainer.classList.remove('hidden');
+    }
+
+    clearSplitFile() {
+        const fileInput = document.getElementById('file-split');
+        const fileInfoContainer = document.getElementById('split-file-info');
+
+        if (fileInput) {
+            fileInput.value = '';
+        }
+
+        if (fileInfoContainer) {
+            fileInfoContainer.classList.add('hidden');
+        }
+
+        this.selectedFile = null;
+        UI.addLog('Arquivo de divisão removido');
+        UI.showToast('Arquivo removido', 'info');
+    }
+
+    previewSplit() {
+        if (!this.selectedFile) {
+            UI.showToast('Selecione um arquivo PDF primeiro', 'warning');
             return;
         }
 
         const splitMode = document.querySelector('input[name="split-mode"]:checked')?.value || 'pages';
+        const customRanges = document.getElementById('split-ranges')?.value;
+
+        let previewText = '';
+        switch (splitMode) {
+            case 'pages':
+                previewText = 'O PDF será dividido em páginas individuais.';
+                break;
+            case 'half':
+                previewText = 'O PDF será dividido pela metade.';
+                break;
+            case 'custom':
+                if (customRanges) {
+                    previewText = `O PDF será dividido usando os intervalos: ${customRanges}`;
+                } else {
+                    previewText = 'Defina os intervalos customizados primeiro.';
+                }
+                break;
+        }
+
+        UI.showToast(previewText, 'info');
+        UI.addLog(`Preview de divisão: ${previewText}`);
+    }
+
+    async splitPDFs() {
+        // Verificar se há arquivo selecionado especificamente na aba de divisão
+        let filesToProcess = [];
+
+        if (this.selectedFile) {
+            filesToProcess = [this.selectedFile];
+        } else {
+            // Fallback para arquivos do upload geral
+            const uploadedFiles = CORE.getUploadedFiles().filter(file => file.type === 'application/pdf');
+            if (uploadedFiles.length === 0) {
+                UI.showToast('Nenhum arquivo PDF selecionado para divisão', 'warning');
+                return;
+            }
+            filesToProcess = uploadedFiles;
+        }
+
+        const splitMode = document.querySelector('input[name="split-mode"]:checked')?.value || 'pages';
+
+        // Validar intervalos customizados se necessário
+        if (splitMode === 'custom') {
+            const customRanges = document.getElementById('split-ranges')?.value.trim();
+            if (!customRanges) {
+                UI.showToast('Por favor, defina os intervalos de páginas para divisão customizada', 'warning');
+                return;
+            }
+        }
 
         UI.showProgress(0, 'Iniciando divisão dos PDFs...');
 
         try {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const progress = ((i + 1) / files.length) * 100;
+            for (let i = 0; i < filesToProcess.length; i++) {
+                const file = filesToProcess[i];
+                const progress = ((i + 1) / filesToProcess.length) * 100;
 
                 UI.showProgress(progress, `Dividindo ${file.name}...`);
 
@@ -60,7 +180,7 @@ class PDFSplitter {
             }
 
             UI.hideProgress();
-            UI.showToast(`Divisão concluída! ${files.length} arquivo(s) processado(s)`, 'success');
+            UI.showToast(`Divisão concluída! ${filesToProcess.length} arquivo(s) processado(s)`, 'success');
 
         } catch (error) {
             console.error('Erro na divisão de PDFs:', error);
@@ -229,6 +349,14 @@ class PDFSplitter {
     // Método para obter exemplo de formato de intervalos
     getPageRangesExample() {
         return "Exemplos: 1-5, 7, 10-15, 20";
+    }
+
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 }
 
