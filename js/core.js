@@ -385,10 +385,28 @@ function updateTabSpecificElements(tabName, pdfFiles) {
 
         case 'split':
             // Atualizar informações do arquivo se há arquivo selecionado
-            if (pdfFiles.length > 0 && window.pdfSplitter) {
+            console.log('🔄 Atualizando elementos da aba split...');
+            console.log('📁 Arquivos PDF disponíveis:', pdfFiles.length);
+            console.log('🔧 window.pdfSplitter disponível:', !!window.pdfSplitter);
+            
+            if (pdfFiles.length > 0) {
                 const file = pdfFiles[0];
-                if (typeof window.pdfSplitter.displayFileInfo === 'function') {
-                    window.pdfSplitter.displayFileInfo(file);
+                console.log('📄 Arquivo selecionado:', file.name);
+                
+                if (window.pdfSplitter && typeof window.pdfSplitter.displayFileInfo === 'function') {
+                    // Chamar de forma assíncrona sem bloquear
+                    window.pdfSplitter.displayFileInfo(file).catch(error => {
+                        console.error('❌ Erro ao executar displayFileInfo:', error);
+                    });
+                } else {
+                    console.warn('⚠️ pdfSplitter ou displayFileInfo não disponível');
+                }
+            } else {
+                console.log('📭 Nenhum arquivo PDF carregado para a aba split');
+                // Esconder informações do arquivo se não há arquivos
+                const fileInfoContainer = document.getElementById('split-file-info');
+                if (fileInfoContainer) {
+                    fileInfoContainer.classList.add('hidden');
                 }
             }
             break;

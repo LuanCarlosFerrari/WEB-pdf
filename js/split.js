@@ -5,8 +5,10 @@
 // e continuidade de processamento mesmo com falhas em arquivos individuais
 class PDFSplitter {
     constructor() {
+        console.log('🔧 Inicializando PDFSplitter...');
         this.isProcessing = false;
         this.initializeSplitFeatures();
+        console.log('✅ PDFSplitter inicializado com sucesso!');
     }
 
     initializeSplitFeatures() {
@@ -70,16 +72,43 @@ class PDFSplitter {
     }
 
     async displayFileInfo(file) {
+        console.log('🔍 Iniciando displayFileInfo para:', file.name);
+        
+        // Aguardar um pouco para garantir que o DOM está pronto
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const fileInfoContainer = document.getElementById('split-file-info');
         const fileName = document.getElementById('split-file-name');
         const fileSize = document.getElementById('split-file-size');
         const filePages = document.getElementById('split-file-pages');
 
-        if (!fileInfoContainer) return;
+        console.log('🔍 Elementos encontrados:', {
+            fileInfoContainer: !!fileInfoContainer,
+            fileName: !!fileName,
+            fileSize: !!fileSize,
+            filePages: !!filePages
+        });
+
+        if (!fileInfoContainer) {
+            console.warn('❌ Container split-file-info não encontrado');
+            return;
+        }
+
+        // Verificar se todos os elementos necessários existem
+        if (!fileName || !fileSize || !filePages) {
+            console.warn('❌ Alguns elementos de informação do arquivo não foram encontrados:', {
+                fileName: !!fileName,
+                fileSize: !!fileSize,
+                filePages: !!filePages
+            });
+            return;
+        }
 
         // Exibir informações básicas
         fileName.textContent = file.name;
         fileSize.textContent = this.formatFileSize(file.size);
+
+        console.log(`📄 Exibindo informações para: ${file.name}`);
 
         // Tentar obter o número de páginas
         try {
@@ -87,12 +116,14 @@ class PDFSplitter {
             const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
             const pageCount = pdfDoc.getPageCount();
             filePages.textContent = `${pageCount} página${pageCount !== 1 ? 's' : ''}`;
+            console.log(`📊 PDF carregado: ${pageCount} página(s)`);
         } catch (error) {
-            console.warn('Erro ao obter informações do PDF:', error);
+            console.warn('⚠️ Erro ao obter informações do PDF:', error);
             filePages.textContent = 'Informação não disponível';
         }
 
         fileInfoContainer.classList.remove('hidden');
+        console.log('✅ Informações do arquivo exibidas com sucesso');
     }
 
     previewSplit() {
@@ -651,8 +682,30 @@ class PDFSplitter {
     }
 }
 
+// Função de teste para verificar disponibilidade dos elementos
+function testSplitElements() {
+    console.log('🧪 Testando disponibilidade dos elementos da aba Split...');
+    
+    const elements = {
+        'split-file-info': document.getElementById('split-file-info'),
+        'split-file-name': document.getElementById('split-file-name'),
+        'split-file-size': document.getElementById('split-file-size'),
+        'split-file-pages': document.getElementById('split-file-pages'),
+        'split-pdfs': document.getElementById('split-pdfs'),
+        'preview-split': document.getElementById('preview-split')
+    };
+    
+    console.log('📊 Resultados do teste:');
+    Object.entries(elements).forEach(([id, element]) => {
+        const status = element ? '✅' : '❌';
+        console.log(`${status} ${id}: ${!!element}`);
+    });
+    
+    console.log('🧪 Teste de elementos concluído!');
+    return elements;
+}
+
 // Inicializar quando o DOM estiver pronto
-// Validação em tempo real para intervalos customizados
 document.addEventListener('DOMContentLoaded', () => {
     const rangesInput = document.getElementById('split-ranges');
     if (rangesInput) {
@@ -665,5 +718,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.target.title = window.pdfSplitter?.getPageRangesExample() || '';
             }
         });
+    }
+
+    // Executar teste se estiver em modo debug
+    if (window.location.search.includes('debug=true')) {
+        // Aguardar DOM estar pronto
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', testSplitElements);
+        } else {
+            testSplitElements();
+        }
     }
 });
