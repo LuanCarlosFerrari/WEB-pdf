@@ -31,7 +31,7 @@ window.CORE = {
 // Tab switching functionality
 function switchTab(tabName) {
     // Update active tab button
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.tab-button').forEach(btn => {
         btn.classList.remove('active');
     });
     const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
