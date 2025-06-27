@@ -30,6 +30,9 @@ function updateStatus(message, type) {
                     'text-red-400'
                 }`;
         }
+    } else {
+        // Fallback: log to console if status indicator doesn't exist
+        console.log(`Status: ${message} (${type})`);
     }
 }
 
@@ -88,33 +91,22 @@ function clearLogs() {
 
 // Toast notifications
 function showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
+    // Create toast container if it doesn't exist
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999;';
+        document.body.appendChild(container);
+    }
 
     const toast = document.createElement('div');
-    toast.className = `toast bg-white border-l-4 rounded-lg shadow-lg p-4 mb-2 max-w-sm ${type === 'success' ? 'border-green-500' :
-        type === 'error' ? 'border-red-500' :
-            type === 'warning' ? 'border-yellow-500' :
-                'border-blue-500'
-        }`;
-
-    const icon = {
-        success: 'fas fa-check-circle text-green-500',
-        error: 'fas fa-exclamation-circle text-red-500',
-        warning: 'fas fa-exclamation-triangle text-yellow-500',
-        info: 'fas fa-info-circle text-blue-500'
-    }[type];
-
-    toast.innerHTML = `
-        <div class="flex items-center">
-            <i class="${icon} mr-3"></i>
-            <p class="text-gray-800 text-sm">${message}</p>
-        </div>
-    `;
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
 
     container.appendChild(toast);
 
-    // Animate in
+    // Show toast
     setTimeout(() => toast.classList.add('show'), 100);
 
     // Auto remove

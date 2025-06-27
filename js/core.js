@@ -28,23 +28,6 @@ window.CORE = {
     }
 };
 
-// Initialize the application
-document.addEventListener('DOMContentLoaded', function () {
-    initializeDragAndDrop();
-    initializeFileInputs();
-    initializeTabSwitching();
-
-    // Show initial status
-    updateStatus('Pronto para processar', 'success');
-    addLog('🚀 Sistema funcional iniciado');
-
-    // Load saved theme
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-        toggleTheme();
-    }
-});
-
 // Tab switching functionality
 function switchTab(tabName) {
     // Update active tab button
@@ -98,9 +81,22 @@ function initializeTabSwitching() {
 
 // Drag and drop functionality
 function initializeDragAndDrop() {
-    const dropZones = document.querySelectorAll('.file-drop-zone');
+    // Main drop zone
+    const mainDropZone = document.getElementById('drop-zone');
+    if (mainDropZone) {
+        mainDropZone.addEventListener('dragover', handleDragOver);
+        mainDropZone.addEventListener('dragleave', handleDragLeave);
+        mainDropZone.addEventListener('drop', handleDrop);
+        mainDropZone.addEventListener('click', () => {
+            document.getElementById('file-input').click();
+        });
+    }
 
+    // Other drop zones (if any)
+    const dropZones = document.querySelectorAll('.file-drop-zone');
     dropZones.forEach(zone => {
+        if (zone.id === 'drop-zone') return; // Skip main zone, already handled
+
         zone.addEventListener('dragover', handleDragOver);
         zone.addEventListener('dragleave', handleDragLeave);
         zone.addEventListener('drop', handleDrop);
@@ -142,28 +138,76 @@ function handleDrop(e) {
 
     if (files.length === 0) return;
 
-    // Handle different drop zones
+    // Filter only PDF files
+    const pdfFiles = files.filter(file =>
+        file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+    );
+
+    if (pdfFiles.length === 0) {
+        if (typeof UI !== 'undefined' && UI.showToast) {
+            UI.showToast('Nenhum arquivo PDF válido encontrado', 'error');
+        } else if (typeof showToast === 'function') {
+            showToast('Nenhum arquivo PDF válido encontrado', 'error');
+        }
+        return;
+    }
+
+    // Handle main drop zone
+    if (zoneId === 'drop-zone' || !zoneId) {
+        displayMainFileList(pdfFiles);
+        routeFilesToCurrentTab(pdfFiles);
+        return;
+    }
+
+    // Handle specific drop zones
     if (zoneId === 'drop-zone-rename' || zoneId === 'drop-zone-merge') {
-        handleMultipleFiles(files, zoneId.includes('rename') ? 'rename' : 'merge');
+        handleMultipleFiles(pdfFiles, zoneId.includes('rename') ? 'rename' : 'merge');
     } else {
-        if (files.length > 1) {
-            showToast('Selecione apenas um arquivo para esta operação', 'warning');
+        if (pdfFiles.length > 1) {
+            if (typeof UI !== 'undefined' && UI.showToast) {
+                UI.showToast('Selecione apenas um arquivo para esta operação', 'warning');
+            } else if (typeof showToast === 'function') {
+                showToast('Selecione apenas um arquivo para esta operação', 'warning');
+            }
             return;
         }
-        handleSingleFile(files[0], zoneId.replace('drop-zone-', ''));
+        handleSingleFile(pdfFiles[0], zoneId.replace('drop-zone-', ''));
     }
 }
 
 // File input initialization
 function initializeFileInputs() {
-    // Multiple file inputs
-    document.getElementById('files-rename').addEventListener('change', (e) => {
-        handleMultipleFiles(Array.from(e.target.files), 'rename');
-    });
+    // Main file input (general upload)
+    const mainFileInput = document.getElementById('file-input');
+    if (mainFileInput) {
+        mainFileInput.addEventListener('change', (e) => {
+            console.log('Main file input changed:', e.target.files.length);
+            if (e.target.files.length > 0) {
+                const files = Array.from(e.target.files);
+                console.log('Files selected:', files.map(f => f.name));
+                // Show files in general file list and route to current tab
+                displayMainFileList(files);
+                routeFilesToCurrentTab(files);
+            }
+        });
+    } else {
+        console.warn('Main file input not found');
+    }
 
-    document.getElementById('files-merge').addEventListener('change', (e) => {
-        handleMultipleFiles(Array.from(e.target.files), 'merge');
-    });
+    // Multiple file inputs
+    const renameInput = document.getElementById('files-rename');
+    if (renameInput) {
+        renameInput.addEventListener('change', (e) => {
+            handleMultipleFiles(Array.from(e.target.files), 'rename');
+        });
+    }
+
+    const mergeInput = document.getElementById('files-merge');
+    if (mergeInput) {
+        mergeInput.addEventListener('change', (e) => {
+            handleMultipleFiles(Array.from(e.target.files), 'merge');
+        });
+    }
 
     // Single file inputs
     ['split', 'extract', 'watermark', 'excel'].forEach(operation => {
@@ -178,10 +222,82 @@ function initializeFileInputs() {
     });
 }
 
+// Display main file list in general upload area
+function displayMainFileList(files) {
+    console.log('displayMainFileList called with:', files.length, 'files');
+    const container = document.getElementById('file-list');
+    if (!container) {
+        console.error('file-list container not found');
+        return;
+    }
+
+    container.innerHTML = '';
+
+    if (files.length === 0) return;
+
+    files.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200 shadow-sm mb-2';
+        fileItem.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-file-pdf text-red-500 text-xl"></i>
+                <div>
+                    <p class="font-medium text-gray-800">${file.name}</p>
+                    <p class="text-sm text-gray-500">${formatFileSize(file.size)}</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">PDF</span>
+                <button onclick="removeMainFile(${index})" 
+                        class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(fileItem);
+    });
+
+    // Add info message
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg';
+    infoDiv.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+            <p class="text-sm text-blue-700">
+                ${files.length} arquivo(s) carregado(s). Use as abas acima para escolher a operação desejada.
+            </p>
+        </div>
+    `;
+    container.appendChild(infoDiv);
+}
+
+// Route files to current tab operation
+function routeFilesToCurrentTab(files) {
+    // Store files globally
+    uploadedFiles = files;
+    CORE.setUploadedFiles(files);
+
+    // Route based on current tab
+    if (currentTab === 'rename' || currentTab === 'merge') {
+        // Multiple file operations
+        handleMultipleFiles(files, currentTab);
+    } else if (['split', 'extract', 'watermark', 'excel'].includes(currentTab)) {
+        // Single file operations - use first file
+        if (files.length > 0) {
+            handleSingleFile(files[0], currentTab);
+            if (files.length > 1) {
+                UI.showToast(`Apenas o primeiro arquivo será usado para ${getTabName(currentTab)}`, 'warning');
+            }
+        }
+    }
+}
+
 // Handle multiple files upload
 function handleMultipleFiles(files, operation) {
     if (isProcessing) {
-        showToast('Aguarde o processamento atual terminar', 'warning');
+        if (typeof UI !== 'undefined' && UI.showToast) {
+            UI.showToast('Aguarde o processamento atual terminar', 'warning');
+        }
         return;
     }
 
@@ -190,12 +306,16 @@ function handleMultipleFiles(files, operation) {
     );
 
     if (validFiles.length === 0) {
-        showToast('Nenhum arquivo PDF válido selecionado', 'error');
+        if (typeof UI !== 'undefined' && UI.showToast) {
+            UI.showToast('Nenhum arquivo PDF válido selecionado', 'error');
+        }
         return;
     }
 
     if (operation === 'merge' && validFiles.length < 2) {
-        showToast('Selecione pelo menos 2 arquivos para mesclar', 'warning');
+        if (typeof UI !== 'undefined' && UI.showToast) {
+            UI.showToast('Selecione pelo menos 2 arquivos para mesclar', 'warning');
+        }
         return;
     }
 
@@ -209,25 +329,35 @@ function handleMultipleFiles(files, operation) {
         processBtn.disabled = false;
     }
 
-    addLog(`📁 ${validFiles.length} arquivo(s) PDF selecionado(s) para ${getTabName(operation)}`);
-    showToast(`${validFiles.length} arquivo(s) carregado(s) com sucesso`, 'success');
+    if (typeof UI !== 'undefined' && UI.addLog) {
+        UI.addLog(`📁 ${validFiles.length} arquivo(s) PDF selecionado(s) para ${getTabName(operation)}`);
+    }
+    if (typeof UI !== 'undefined' && UI.showToast) {
+        UI.showToast(`${validFiles.length} arquivo(s) carregado(s) com sucesso`, 'success');
+    }
 }
 
 // Handle single file upload
 function handleSingleFile(file, operation) {
     if (isProcessing) {
-        showToast('Aguarde o processamento atual terminar', 'warning');
+        if (typeof UI !== 'undefined' && UI.showToast) {
+            UI.showToast('Aguarde o processamento atual terminar', 'warning');
+        }
         return;
     }
 
     if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
-        showToast('Por favor, selecione um arquivo PDF', 'error');
+        if (typeof UI !== 'undefined' && UI.showToast) {
+            UI.showToast('Por favor, selecione um arquivo PDF', 'error');
+        }
         return;
     }
 
     // Check file size (100MB limit)
     if (file.size > 100 * 1024 * 1024) {
-        showToast('Arquivo muito grande. Máximo 100MB', 'error');
+        if (typeof UI !== 'undefined' && UI.showToast) {
+            UI.showToast('Arquivo muito grande. Máximo 100MB', 'error');
+        }
         return;
     }
 
@@ -237,8 +367,12 @@ function handleSingleFile(file, operation) {
     // Enable controls
     enableOperationControls(operation);
 
-    addLog(`📄 Arquivo selecionado: ${file.name} (${formatFileSize(file.size)})`);
-    showToast('Arquivo carregado com sucesso', 'success');
+    if (typeof UI !== 'undefined' && UI.addLog) {
+        UI.addLog(`📄 Arquivo selecionado: ${file.name} (${formatFileSize(file.size)})`);
+    }
+    if (typeof UI !== 'undefined' && UI.showToast) {
+        UI.showToast('Arquivo carregado com sucesso', 'success');
+    }
 }
 
 // Display file list for multiple files
@@ -379,6 +513,35 @@ function removeFile(index, operation) {
     }
 
     addLog(`🗑️ Arquivo removido: ${index + 1}`);
+}
+
+// Remove file from main list
+function removeMainFile(index) {
+    uploadedFiles.splice(index, 1);
+    CORE.setUploadedFiles(uploadedFiles);
+    displayMainFileList(uploadedFiles);
+
+    // Update current tab if needed
+    if (uploadedFiles.length === 0) {
+        // Clear all tab-specific displays
+        const containers = ['file-list-rename', 'merge-file-list'];
+        containers.forEach(id => {
+            const container = document.getElementById(id);
+            if (container) container.innerHTML = '';
+        });
+
+        // Clear single file displays
+        ['split', 'extract', 'watermark', 'excel'].forEach(operation => {
+            clearSingleFileUpload(operation);
+        });
+    } else {
+        // Re-route remaining files
+        routeFilesToCurrentTab(uploadedFiles);
+    }
+
+    if (typeof addLog === 'function') {
+        addLog(`🗑️ Arquivo removido: ${index + 1}`);
+    }
 }
 
 // Global callback functions for module compatibility
@@ -523,3 +686,43 @@ document.addEventListener('keydown', function (e) {
         if (typeof showHelp === 'function') showHelp();
     }
 });
+
+// Debug functions for testing (remove in production)
+window.debugUpload = {
+    test: function () {
+        console.log('=== DEBUG UPLOAD TEST ===');
+
+        console.log('Checking elements:');
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const fileList = document.getElementById('file-list');
+
+        console.log('file-input:', fileInput);
+        console.log('drop-zone:', dropZone);
+        console.log('file-list:', fileList);
+
+        console.log('Checking functions:');
+        console.log('displayMainFileList:', typeof displayMainFileList);
+        console.log('routeFilesToCurrentTab:', typeof routeFilesToCurrentTab);
+        console.log('formatFileSize:', typeof formatFileSize);
+        console.log('UI object:', typeof UI);
+
+        if (fileInput) {
+            console.log('Testing file input click...');
+            fileInput.click();
+        }
+
+        return 'Debug complete - check console for results';
+    },
+
+    simulateFileUpload: function () {
+        console.log('Simulating file upload...');
+        // Create a fake file for testing
+        const fakeFile = new File(['test'], 'test.pdf', { type: 'application/pdf' });
+        displayMainFileList([fakeFile]);
+        routeFilesToCurrentTab([fakeFile]);
+        return 'Fake file uploaded';
+    }
+};
+
+console.log('Debug functions available: window.debugUpload.test() and window.debugUpload.simulateFileUpload()');
