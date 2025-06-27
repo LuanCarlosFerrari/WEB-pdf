@@ -635,18 +635,14 @@ Processado em: ${new Date().toLocaleString()}
 }
 
 // Inicializar quando o DOM estiver pronto
-let pdfToExcelConverter;
-document.addEventListener('DOMContentLoaded', () => {
-    pdfToExcelConverter = new PDFToExcelConverter();
-});
-
-// Adicionar validação em tempo real para padrão customizado
+// Validação em tempo real para padrão customizado
 document.addEventListener('DOMContentLoaded', () => {
     const patternInput = document.getElementById('excel-pattern');
     if (patternInput) {
         patternInput.addEventListener('input', (e) => {
             const value = e.target.value;
-            const isValid = pdfToExcelConverter?.validateCustomPattern(value);
+            // Usar a instância global criada em init.js
+            const isValid = window.pdfToExcelConverter?.validateCustomPattern(value);
 
             e.target.style.borderColor = value.trim() ?
                 (isValid ? '#28a745' : '#dc3545') : '#ddd';

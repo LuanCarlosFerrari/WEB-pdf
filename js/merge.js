@@ -255,7 +255,4 @@ class PDFMerger {
 }
 
 // Inicializar quando o DOM estiver pronto
-let pdfMerger;
-document.addEventListener('DOMContentLoaded', () => {
-    pdfMerger = new PDFMerger();
-});
+

@@ -207,14 +207,9 @@ class PDFRenamer {
 }
 
 // Inicializar quando o DOM estiver pronto
-let pdfRenamer;
-document.addEventListener('DOMContentLoaded', () => {
-    pdfRenamer = new PDFRenamer();
-});
-
 // Salvar regras antes de sair da página
 window.addEventListener('beforeunload', () => {
-    if (pdfRenamer) {
-        pdfRenamer.saveRenameRules();
+    if (window.pdfRenamer) {
+        window.pdfRenamer.saveRenameRules();
     }
 });

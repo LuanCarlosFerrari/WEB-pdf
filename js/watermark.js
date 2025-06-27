@@ -445,14 +445,9 @@ class PDFWatermarker {
 }
 
 // Inicializar quando o DOM estiver pronto
-let pdfWatermarker;
-document.addEventListener('DOMContentLoaded', () => {
-    pdfWatermarker = new PDFWatermarker();
-});
-
 // Salvar configurações antes de sair da página
 window.addEventListener('beforeunload', () => {
-    if (pdfWatermarker) {
-        pdfWatermarker.saveWatermarkSettings();
+    if (window.pdfWatermarker) {
+        window.pdfWatermarker.saveWatermarkSettings();
     }
 });

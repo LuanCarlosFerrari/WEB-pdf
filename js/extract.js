@@ -387,12 +387,7 @@ class PDFExtractor {
 }
 
 // Inicializar quando o DOM estiver pronto
-let pdfExtractor;
-document.addEventListener('DOMContentLoaded', () => {
-    pdfExtractor = new PDFExtractor();
-});
-
-// Adicionar validação em tempo real para páginas customizadas
+// Validação em tempo real para páginas customizadas
 document.addEventListener('DOMContentLoaded', () => {
     const rangesInput = document.getElementById('extract-ranges');
     if (rangesInput) {
@@ -401,7 +396,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Adicionar feedback visual para formato válido/inválido
             if (value.trim()) {
                 e.target.style.borderColor = '#ddd';
-                e.target.title = pdfExtractor?.getPageRangesExample() || '';
+                // Usar a instância global criada em init.js
+                e.target.title = window.pdfExtractor?.getPageRangesExample() || '';
             }
         });
     }
