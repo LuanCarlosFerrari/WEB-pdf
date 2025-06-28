@@ -16,8 +16,19 @@ class TemplateManager {
             className: 'ItauTemplate'
         });
 
+        this.registerTemplate('bradesco', {
+            name: 'Banco Bradesco',
+            description: 'Transferência e Boleto do Bradesco',
+            scriptPath: 'js/templates/bradesco-template.js',
+            className: 'BradescoTemplate'
+        });
+
         // Carregar o template padrão (Itaú)
         await this.loadTemplate('itau');
+
+        // Log dos templates registrados
+        console.log('📋 Templates registrados:', Array.from(this.templates.keys()));
+        console.log('📋 Templates disponíveis:', this.getAvailableTemplates());
     }
 
     registerTemplate(key, config) {
@@ -36,15 +47,15 @@ class TemplateManager {
         }
 
         const config = this.templates.get(templateKey);
-        
+
         try {
             // Carregar o script do template dinamicamente
             await this.loadScript(config.scriptPath);
             this.loadedTemplates.add(templateKey);
-            
+
             console.log(`✅ Template carregado: ${templateKey}`);
             return this.getTemplateInstance(templateKey);
-            
+
         } catch (error) {
             console.error(`❌ Erro ao carregar template ${templateKey}:`, error);
             throw error;
@@ -62,7 +73,7 @@ class TemplateManager {
 
         const config = this.templates.get(templateKey);
         const TemplateClass = window[config.className];
-        
+
         if (!TemplateClass) {
             throw new Error(`Classe do template não encontrada: ${config.className}`);
         }

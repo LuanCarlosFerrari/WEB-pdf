@@ -70,17 +70,24 @@ class PDFRenamer {
     updateLayoutOptions() {
         const layout = document.getElementById('rename-layout')?.value;
         const itauOptions = document.getElementById('itau-options');
+        const bradescoOptions = document.getElementById('bradesco-options');
         const customOptions = document.getElementById('custom-options');
 
-        if (itauOptions && customOptions) {
-            if (layout === 'itau') {
-                itauOptions.style.display = 'block';
-                customOptions.style.display = 'none';
-            } else if (layout === 'custom') {
-                itauOptions.style.display = 'none';
-                customOptions.style.display = 'block';
-            }
+        // Esconder todas as opções primeiro
+        if (itauOptions) itauOptions.style.display = 'none';
+        if (bradescoOptions) bradescoOptions.style.display = 'none';
+        if (customOptions) customOptions.style.display = 'none';
+
+        // Mostrar opções relevantes
+        if (layout === 'itau' && itauOptions) {
+            itauOptions.style.display = 'block';
+        } else if (layout === 'bradesco' && bradescoOptions) {
+            bradescoOptions.style.display = 'block';
+        } else if (layout === 'custom' && customOptions) {
+            customOptions.style.display = 'block';
         }
+
+        console.log(`🏦 Layout selecionado: ${layout}`);
     }
 
     updateRenamePreview() {
@@ -166,6 +173,9 @@ class PDFRenamer {
                 if (layout === 'itau') {
                     // Usar o template modular do Itaú
                     extractedInfo = await this.templateManager.extractData('itau', pageText, pageNum);
+                } else if (layout === 'bradesco') {
+                    // Usar o template modular do Bradesco
+                    extractedInfo = await this.templateManager.extractData('bradesco', pageText, pageNum);
                 } else {
                     extractedInfo = this.extractCustomData(pageText, pageNum);
                 }
