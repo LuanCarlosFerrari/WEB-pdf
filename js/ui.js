@@ -90,6 +90,84 @@ Object.assign(window.UI, {
         this.updateProgress(operation, 0, '');
     },
 
+    // Multiple files progress management
+    showMultipleFilesProgress: function (message, currentFile, totalFiles, currentPage, totalPages) {
+        const container = document.getElementById('progress-container') || this.createProgressContainer();
+        container.style.display = 'flex';
+
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercentage = document.getElementById('progress-percentage');
+
+        if (progressText) {
+            progressText.textContent = message;
+        }
+
+        // Calculate overall progress based on files and pages
+        const fileProgress = (currentFile - 1) / totalFiles;
+        const pageProgress = currentPage / totalPages / totalFiles;
+        const overallProgress = (fileProgress + pageProgress) * 100;
+
+        if (progressBar) {
+            progressBar.style.width = `${overallProgress}%`;
+        }
+
+        if (progressPercentage) {
+            progressPercentage.textContent = `${Math.round(overallProgress)}% (Arquivo ${currentFile}/${totalFiles} - Página ${currentPage}/${totalPages})`;
+        }
+    },
+
+    createProgressContainer: function () {
+        const container = document.createElement('div');
+        container.id = 'progress-container';
+        container.className = 'progress-container';
+        container.innerHTML = `
+            <div class="text-center">
+                <div class="mb-4">
+                    <i class="fas fa-cog fa-spin text-3xl text-blue-500"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">Processando...</h3>
+                <p id="progress-text" class="text-gray-600 mb-4">Iniciando processamento...</p>
+                <div class="progress-track">
+                    <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+                </div>
+                <p id="progress-percentage" class="text-sm text-gray-500 mt-2">0%</p>
+            </div>
+        `;
+        document.body.appendChild(container);
+        return container;
+    },
+
+    // Enhanced progress for single operations
+    updateProgress: function (message, percentage) {
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const progressPercentage = document.getElementById('progress-percentage');
+
+        if (progressBar) {
+            progressBar.style.width = `${percentage}%`;
+        }
+
+        if (progressText && message) {
+            progressText.textContent = message;
+        }
+
+        if (progressPercentage) {
+            progressPercentage.textContent = `${Math.round(percentage)}%`;
+        }
+    },
+
+    // Hide progress modal
+    hideProgress: function () {
+        const container = document.getElementById('progress-container');
+        if (container) {
+            container.style.display = 'none';
+        }
+
+        // Reset progress
+        this.updateProgress('', 0);
+    },
+
     // Log management
     addLog: function (message) {
         const logContainer = document.getElementById('log-content');

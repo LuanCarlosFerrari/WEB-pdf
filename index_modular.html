@@ -32,6 +32,8 @@
     <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <!-- PDF.js for text extraction -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- JSZip for creating organized folders -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
         // Configure PDF.js worker
         if (typeof pdfjsLib !== 'undefined') {
@@ -600,6 +602,144 @@
             border: 2px dashed var(--border-color);
         }
 
+        /* ===== ESTILO PARA MÚLTIPLOS ARQUIVOS ===== */
+        .multiple-files-indicator {
+            background: linear-gradient(135deg, #3b82f6, #10b981);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        .file-status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .file-status-badge.processing {
+            background-color: #fef3c7;
+            color: #d97706;
+            animation: pulse 1.5s infinite;
+        }
+
+        .file-status-badge.completed {
+            background-color: #d1fae5;
+            color: #059669;
+        }
+
+        .file-status-badge.error {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        .progress-detailed {
+            background: linear-gradient(90deg, #e5f3ff 0%, #cce7ff 100%);
+            border: 1px solid #93c5fd;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+        }
+
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .file-preview-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem;
+            background: white;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-preview-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .file-preview-card.processing {
+            border-color: #f59e0b;
+            background: #fefbf3;
+        }
+
+        .file-preview-card.completed {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .file-preview-card.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes processing {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .processing-icon {
+            animation: processing 2s linear infinite;
+        }
+
+        /* ===== RESPONSIVIDADE PARA MÚLTIPLOS ARQUIVOS ===== */
+        @media (max-width: 768px) {
+            .files-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .multiple-files-indicator {
+                font-size: 0.75rem;
+                padding: 0.375rem 0.75rem;
+            }
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .tab-buttons {
@@ -677,6 +817,98 @@
         .animate-spin {
             animation: spin 1s linear infinite;
         }
+
+        /* ===== DOWNLOAD OPTIONS STYLING ===== */
+        .download-option-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .download-option-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+        }
+
+        .download-option-card.recommended {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-color: #0ea5e9;
+        }
+
+        .download-option-card.recommended:hover {
+            border-color: #0284c7;
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.2);
+        }
+
+        .download-stats {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1e40af;
+            margin-top: 0.5rem;
+        }
+
+        .download-feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .download-feature-list li {
+            padding: 0.125rem 0;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .download-feature-list li::before {
+            margin-right: 0.5rem;
+            font-weight: bold;
+        }
+
+        /* ===== ARQUIVO INFO PREVIEW ===== */
+        .info-file-preview {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 0.5rem 0;
+            white-space: pre-line;
+            color: #495057;
+        }
+
+        /* ===== PROGRESS ENHANCEMENTS ===== */
+        .zip-progress {
+            background: linear-gradient(90deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 2px solid #93c5fd;
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .zip-progress .progress-track {
+            height: 12px;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .zip-progress .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
     </style>
 </head>
 
@@ -717,7 +949,7 @@
                 <!-- Single file inputs for specific operations -->
                 <input type="file" id="file-extract" accept=".pdf" class="hidden">
                 <input type="file" id="file-watermark" accept=".pdf" class="hidden">
-                <input type="file" id="file-rename" accept=".pdf" class="hidden">
+                <input type="file" id="file-rename" multiple accept=".pdf" class="hidden">
 
                 <button id="select-files-btn" class="btn-base btn-primary">
                     <i class="fas fa-folder-open mr-2"></i>
@@ -991,7 +1223,8 @@
 
             <!-- Rename Tab -->
             <div id="rename-tab" class="tab-content p-6">
-                <h3 class="text-lg font-semibold mb-4 text-gray-700">Renomear e Dividir por Páginas</h3>
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">Renomear e Dividir por Páginas - Múltiplos Arquivos
+                </h3>
 
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
@@ -1005,7 +1238,8 @@
                                     <option value="bradesco">Extratos Bradesco - Transferência e Boleto</option>
                                     <option value="custom" disabled>Personalizado (em breve)</option>
                                 </select>
-                                <p class="text-xs text-gray-500 mt-1">Suporta comprovantes de diferentes bancos</p>
+                                <p class="text-xs text-gray-500 mt-1">Suporta comprovantes de diferentes bancos e
+                                    múltiplos arquivos</p>
                             </div>
 
                             <!-- Itaú Specific Options -->
@@ -1161,46 +1395,42 @@
                     </div>
 
                     <div>
-                        <h4 class="font-medium mb-3">Preview da Renomeação</h4>
+                        <h4 class="font-medium mb-3">Preview da Renomeação - Múltiplos Arquivos</h4>
                         <div id="rename-preview"
                             class="border border-gray-300 rounded-lg p-4 bg-gray-50 min-h-[411px] max-h-[411px] overflow-y-auto">
                             <div class="text-center text-gray-500">
                                 <i class="fas fa-file-pdf text-3xl mb-2"></i>
-                                <p>Carregue um PDF para ver o preview da renomeação</p>
+                                <p>Carregue um ou mais PDFs para ver o preview da renomeação</p>
+                                <p class="text-sm mt-2">✨ Suporte para múltiplos arquivos simultaneamente</p>
                             </div>
                         </div>
 
-                        <!-- Progress for rename -->
+                        <!-- Progress for rename - Enhanced for Multiple Files -->
                         <div id="rename-progress" class="mt-4 hidden">
-                            <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
-                                <span>Processando páginas...</span>
-                                <span id="rename-progress-text">0%</span>
-                            </div>
-                            <div class="progress-track">
-                                <div id="rename-progress-bar" class="progress-bar" style="width: 0%"></div>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3">
+                                <div class="flex items-center justify-between text-sm text-blue-700 mb-2">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-files mr-2"></i>
+                                        <span id="rename-files-status">Processando arquivos...</span>
+                                    </div>
+                                    <span id="rename-progress-text">0%</span>
+                                </div>
+                                <div class="progress-track">
+                                    <div id="rename-progress-bar" class="progress-bar" style="width: 0%"></div>
+                                </div>
+                                <div id="rename-detailed-progress" class="text-xs text-blue-600 mt-2">
+                                    <!-- Detailed progress info will be shown here -->
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- File Info -->
-                <div id="rename-file-info" class="hidden mb-6 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <i class="fas fa-file-pdf text-red-500 text-2xl mr-3"></i>
-                            <div>
-                                <h5 class="font-medium text-gray-800" id="rename-file-name">arquivo.pdf</h5>
-                                <p class="text-sm text-gray-600">
-                                    <span id="rename-file-size">0 KB</span> •
-                                    <span id="rename-file-pages">0 páginas</span>
-                                </p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <span class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
-                                Pronto para processar
-                            </span>
-                        </div>
+                <!-- File Info for Multiple Files -->
+                <div id="rename-files-info" class="hidden mb-6 space-y-3">
+                    <h4 class="font-medium text-gray-700">Arquivos Carregados:</h4>
+                    <div id="rename-files-list" class="space-y-2 max-h-40 overflow-y-auto">
+                        <!-- Multiple files will be listed here -->
                     </div>
                 </div>
 
@@ -1208,16 +1438,67 @@
                 <div class="flex gap-3 mt-6">
                     <button id="rename-process" class="btn-base btn-secondary btn-lg">
                         <i class="fas fa-edit mr-2"></i>
-                        Processar e Renomear
+                        Processar e Renomear Todos
                     </button>
                     <button id="rename-preview-btn" class="btn-base btn-outline">
                         <i class="fas fa-eye mr-2"></i>
-                        Analisar Arquivo
+                        Analisar Arquivos
                     </button>
-                    <button id="rename-download-all" class="btn-base btn-primary hidden">
+                </div>
+
+                <!-- Download Options -->
+                <div id="download-options" class="hidden mt-6 p-4 border border-blue-200 rounded-lg bg-blue-50">
+                    <h4 class="font-medium mb-3 text-blue-800">
                         <i class="fas fa-download mr-2"></i>
-                        Baixar Todos
-                    </button>
+                        Opções de Download
+                    </h4>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded-lg border border-blue-200">
+                            <div class="flex items-start">
+                                <i class="fas fa-file-archive text-blue-600 text-2xl mr-3 mt-1"></i>
+                                <div class="flex-1">
+                                    <h5 class="font-medium text-gray-800 mb-2">ZIP Organizado (Recomendado)</h5>
+                                    <p class="text-sm text-gray-600 mb-3">
+                                        Cria um arquivo ZIP com pastas separadas para cada arquivo original,
+                                        incluindo arquivo de informações detalhadas.
+                                    </p>
+                                    <ul class="text-xs text-gray-500 mb-3 space-y-1">
+                                        <li>✅ Organização automática em pastas</li>
+                                        <li>✅ Arquivo de informações incluído</li>
+                                        <li>✅ Um único download</li>
+                                        <li>✅ Melhor para muitos arquivos</li>
+                                    </ul>
+                                    <button id="rename-download-all" class="btn-base btn-primary w-full">
+                                        <i class="fas fa-file-archive mr-2"></i>
+                                        Baixar ZIP Organizado
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg border border-gray-200">
+                            <div class="flex items-start">
+                                <i class="fas fa-files text-gray-600 text-2xl mr-3 mt-1"></i>
+                                <div class="flex-1">
+                                    <h5 class="font-medium text-gray-800 mb-2">Downloads Individuais</h5>
+                                    <p class="text-sm text-gray-600 mb-3">
+                                        Baixa cada arquivo PDF separadamente. Útil se você quer
+                                        organizar manualmente ou baixar apenas alguns arquivos.
+                                    </p>
+                                    <ul class="text-xs text-gray-500 mb-3 space-y-1">
+                                        <li>⚠️ Múltiplos downloads</li>
+                                        <li>⚠️ Organização manual</li>
+                                        <li>✅ Controle individual</li>
+                                        <li>✅ Melhor para poucos arquivos</li>
+                                    </ul>
+                                    <button id="rename-download-individual" class="btn-base btn-outline w-full">
+                                        <i class="fas fa-download mr-2"></i>
+                                        Downloads Individuais
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Results Section -->
