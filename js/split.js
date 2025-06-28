@@ -17,15 +17,10 @@ class PDFSplitter {
 
     setupEventListeners() {
         const splitBtn = document.getElementById('split-pdfs');
-        const previewBtn = document.getElementById('preview-split');
         const splitModeRadios = document.querySelectorAll('input[name="split-mode"]');
 
         if (splitBtn) {
             splitBtn.addEventListener('click', () => this.splitPDFs());
-        }
-
-        if (previewBtn) {
-            previewBtn.addEventListener('click', () => this.previewSplit());
         }
 
         splitModeRadios.forEach(radio => {
@@ -124,55 +119,6 @@ class PDFSplitter {
 
         fileInfoContainer.classList.remove('hidden');
         console.log('✅ Informações do arquivo exibidas com sucesso');
-    }
-
-    previewSplit() {
-        if (!this.selectedFile && CORE.getUploadedFiles().length === 0) {
-            UI.showToast('Selecione um arquivo PDF primeiro', 'warning');
-            return;
-        }
-
-        const file = this.selectedFile || CORE.getUploadedFiles().find(f => f.type === 'application/pdf');
-        if (!file) {
-            UI.showToast('Nenhum arquivo PDF válido encontrado', 'warning');
-            return;
-        }
-
-        const splitMode = document.querySelector('input[name="split-mode"]:checked')?.value || 'pages';
-
-        // Simular contagem de páginas para preview (seria ideal ter esta informação já carregada)
-        let previewText = '';
-
-        switch (splitMode) {
-            case 'pages':
-                previewText = `🔄 O PDF "${file.name}" será dividido em páginas individuais (uma página por arquivo).`;
-                break;
-
-            case 'half':
-                previewText = `🔄 O PDF "${file.name}" será dividido pela metade (2 arquivos serão criados).`;
-                break;
-
-            case 'custom':
-                const customRanges = document.getElementById('split-ranges')?.value;
-                if (!customRanges || !customRanges.trim()) {
-                    previewText = '⚠️ Defina os intervalos customizados primeiro.';
-                } else {
-                    // Para preview, assumir um número genérico de páginas
-                    // Em uma implementação real, você poderia carregar o PDF para obter o número real
-                    const estimatedPages = 10; // Placeholder
-                    const validation = this.validatePageRanges(customRanges, estimatedPages);
-
-                    if (validation.valid) {
-                        previewText = `🔄 O PDF "${file.name}" será dividido usando os intervalos: ${customRanges}`;
-                    } else {
-                        previewText = `❌ Intervalos inválidos: ${validation.message}`;
-                    }
-                }
-                break;
-        }
-
-        UI.showToast(previewText, splitMode === 'custom' && previewText.includes('❌') ? 'error' : 'info');
-        UI.addLog(`Preview de divisão: ${previewText}`);
     }
 
     async splitPDFs() {
@@ -691,8 +637,7 @@ function testSplitElements() {
         'split-file-name': document.getElementById('split-file-name'),
         'split-file-size': document.getElementById('split-file-size'),
         'split-file-pages': document.getElementById('split-file-pages'),
-        'split-pdfs': document.getElementById('split-pdfs'),
-        'preview-split': document.getElementById('preview-split')
+        'split-pdfs': document.getElementById('split-pdfs')
     };
 
     console.log('📊 Resultados do teste:');
