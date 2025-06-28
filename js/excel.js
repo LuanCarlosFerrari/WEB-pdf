@@ -897,32 +897,7 @@ Versão Sistema,2.1.0
         // Extrair apenas números e vírgulas/pontos
         const numbers = value.replace(/[^\d,.-]/g, '');
         if (numbers) {
-            // Parse do valor para number
-            let numValue;
-            if (numbers.includes(',') && numbers.includes('.')) {
-                // Formato brasileiro: 1.234,56
-                numValue = parseFloat(numbers.replace(/\./g, '').replace(',', '.'));
-            } else if (numbers.includes(',')) {
-                // Formato brasileiro simples: 1234,56
-                numValue = parseFloat(numbers.replace(',', '.'));
-            } else if (numbers.includes('.')) {
-                // Pode ser decimal americano ou separador de milhar
-                const parts = numbers.split('.');
-                if (parts.length === 2 && parts[1].length <= 2) {
-                    numValue = parseFloat(numbers);
-                } else {
-                    numValue = parseFloat(numbers.replace(/\./g, ''));
-                }
-            } else {
-                numValue = parseFloat(numbers);
-            }
-            
-            if (!isNaN(numValue)) {
-                return numValue.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-            }
+            return numbers.includes(',') ? numbers : `${numbers},00`;
         }
         return value;
     }
@@ -1266,31 +1241,8 @@ Versão Sistema,2.1.0
 
     parseCurrency(value) {
         // Extrair valor numérico de string monetária
-        if (!value || typeof value !== 'string') return 0;
-        
-        let cleanValue = value.replace(/[^\d,.-]/g, '');
-        
-        // Se tem ponto e vírgula, assumir formato brasileiro (1.234,56)
-        if (cleanValue.includes('.') && cleanValue.includes(',')) {
-            cleanValue = cleanValue.replace(/\./g, '').replace(',', '.');
-        }
-        // Se tem apenas vírgula, assumir decimal brasileiro (1234,56)
-        else if (cleanValue.includes(',') && !cleanValue.includes('.')) {
-            cleanValue = cleanValue.replace(',', '.');
-        }
-        // Se tem apenas ponto, verificar se é separador de milhar ou decimal
-        else if (cleanValue.includes('.')) {
-            const parts = cleanValue.split('.');
-            if (parts.length === 2 && parts[1].length <= 2) {
-                // Provavelmente decimal: 1234.56
-                cleanValue = cleanValue;
-            } else {
-                // Provavelmente separador de milhar: 1.234
-                cleanValue = cleanValue.replace(/\./g, '');
-            }
-        }
-        
-        return parseFloat(cleanValue) || 0;
+        const numbers = value.replace(/[^\d,.-]/g, '').replace(',', '.');
+        return parseFloat(numbers) || 0;
     }
 
     formatFileSize(bytes) {

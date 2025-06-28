@@ -97,8 +97,8 @@ class ItauTemplate {
 
         // Padrões específicos para PIX
         const patterns = {
-            // Nome do recebedor (aparece após "nome do recebedor:")
-            recipient: /nome do recebedor:\s*([A-ZÁÊÇÕÜÚ\s]+)/i,
+            // Nome do recebedor (aparece após "nome do recebedor:") - incluindo hífen e outros caracteres
+            recipient: /nome do recebedor:\s*([A-ZÁÊÇÕÜÚ][A-ZÁÊÇÕÜÚ\s&.\-\/0-9]+?)(?:\s+(?:chave|CPF|CNPJ)|[\r\n]|$)/i,
             // Valor da transação - padrão principal
             valueTransaction: /valor da transação:\s*([\d.,]+)/i,
             // Valor final
@@ -478,11 +478,16 @@ class ItauTemplate {
                     return lowerWord;
                 }
 
-                // Para palavras com hífen, capitalizar cada parte
+                // Para palavras com hífen, capitalizar cada parte corretamente
                 if (word.includes('-')) {
-                    return word.split('-').map(part =>
-                        part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
-                    ).join('-');
+                    return word.split('-').map((part, index) => {
+                        // Se a parte tem apenas 1 caractere, manter em maiúscula
+                        if (part.length === 1) {
+                            return part.toUpperCase();
+                        }
+                        // Senão, capitalizar normalmente
+                        return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+                    }).join('-');
                 }
 
                 // Capitalizar normalmente
@@ -490,8 +495,22 @@ class ItauTemplate {
             });
         }
 
-        // Para nomes normais (já em formato misto), apenas limpar
-        return cleanName.replace(/\b\w/g, l => l.toUpperCase());
+        // Para nomes normais (já em formato misto), apenas limpar e capitalizar palavras
+        return cleanName.replace(/\b[\w\-]+/g, (word) => {
+            // Para palavras com hífen, tratar cada parte
+            if (word.includes('-')) {
+                return word.split('-').map((part, index) => {
+                    // Se a parte tem apenas 1 caractere, manter em maiúscula
+                    if (part.length === 1) {
+                        return part.toUpperCase();
+                    }
+                    // Senão, capitalizar normalmente
+                    return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+                }).join('-');
+            }
+            // Capitalizar normalmente
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        });
     }
 
     // Ícones e cores para UI
