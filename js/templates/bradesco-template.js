@@ -1,11 +1,12 @@
 // Template de Extração de Dados - Banco Bradesco
 // Suporta: Transferência e Boleto
+// ATUALIZADO: Priorização máxima do campo "Favorecido"
 
 class BradescoTemplate {
     constructor() {
         this.bankName = 'Bradesco';
         this.supportedTypes = ['Transferência', 'Boleto'];
-        console.log('🏦 Template Bradesco inicializado');
+        console.log('🏦 Template Bradesco inicializado - PRIORIDADE: Campo "Favorecido"');
     }
 
     // Método principal para extrair dados do texto
@@ -92,6 +93,7 @@ class BradescoTemplate {
             'TRANSAÇÃO BANCARIA',
             'TRANSFERENCIA',
             'TRANSFERÊNCIA',
+            'FAVORECIDO',  // 🔥 Adicionado para detectar melhor comprovantes com campo Favorecido
             'RAZAO SOCIAL BENEFICIARIO',
             'RAZÃO SOCIAL BENEFICIÁRIO',
             'NOME FANTASIA BENEFICIARIO',
@@ -152,20 +154,29 @@ class BradescoTemplate {
         console.log('💸 Extraindo dados de transferência Bradesco');
         console.log('📄 Texto completo para análise:', text.substring(0, 1000));
 
-        // Padrões mais flexíveis e específicos para Bradesco
+        // Padrões organizados por PRIORIDADE - FAVORECIDO sempre primeiro
         const patterns = {
-            // Padrões com base na imagem real do Bradesco
+            // 🔥 PRIORIDADE MÁXIMA: Campo "Favorecido" (específico do Bradesco)
+            favorecido: [
+                /Favorecido[:\s]*([A-ZÁÊÇÕÜÚ][A-ZÁÊÇÕÜÚ\s&.\-\/,]{5,60})(?:\s+(?:CPF|CNPJ|R\$|\d{2})|[\r\n]|$)/i,
+                /Favorecido[:\s]*([A-ZÁÊÇÕÜÚ][^\n\r]{5,60})(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i,
+                /Favorecido[:\s]+([A-ZÁÊÇÕÜÚ][^\n\r]*?)(?=\s+(?:CPF|CNPJ|R\$|Valor|\d{3}\.|[\r\n]))/i
+            ],
+
+            // Padrões para Razão Social do Beneficiário
             razaoSocial: [
                 /Razão\s+Social\s+(?:do\s+)?Beneficiário[:\s]*([A-ZÁÊÇÕÜÚ][^\n\r]{5,60})(?:\s+(?:CPF|CNPJ|Nome)|[\r\n]|$)/i,
                 /Razão\s+Social[:\s]*([A-ZÁÊÇÕÜÚ][^\n\r]{5,60})(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i,
                 /Razao\s+Social[:\s]*([A-ZÁÊÇÕÜÚ][^\n\r]{5,60})(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i
             ],
 
+            // Nome Fantasia do Beneficiário
             nomeFantasia: [
                 /Nome\s+Fantasia\s+(?:do\s+)?Beneficiário[:\s]*([A-ZÁÊÇÕÜÚ][^\n\r]{5,60})(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i,
                 /Nome\s+Fantasia[:\s]*([A-ZÁÊÇÕÜÚ][^\n\r]{5,60})(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i
             ],
 
+            // Beneficiário genérico
             beneficiario: [
                 /Beneficiário[:\s]*([A-ZÁÊÇÕÜÚ][^\n\r]{5,60})(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i,
                 /Beneficiario[:\s]*([A-ZÁÊÇÕÜÚ][^\n\r]{5,60})(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i
@@ -178,7 +189,7 @@ class BradescoTemplate {
                 /((?:[A-Z]{2,}\s+){2,}[A-Z]{2,})/g
             ],
 
-            // Padrões genéricos mais flexíveis
+            // Padrões genéricos mais flexíveis (último recurso)
             nomeGenerico: [
                 /:\s*([A-ZÁÊÇÕÜÚ][A-ZÁÊÇÕÜÚ\s&.\-\/]{8,50})/g,
                 /([A-Z][A-Z\s]{10,50})(?=\s+(?:CPF|CNPJ|\d{2,}))/g
@@ -188,17 +199,32 @@ class BradescoTemplate {
         let recipientMatch = null;
         let matchedPattern = '';
 
-        // 1. Tentar Razão Social primeiro (mais específico)
-        for (const pattern of patterns.razaoSocial) {
+        // 🔥 PRIORIDADE 1: SEMPRE tentar FAVORECIDO primeiro
+        console.log('🎯 Tentando extrair campo "Favorecido" primeiro...');
+        for (const pattern of patterns.favorecido) {
             recipientMatch = text.match(pattern);
             if (recipientMatch) {
-                matchedPattern = 'razaoSocial';
+                matchedPattern = 'favorecido';
+                console.log(`✅ Campo "Favorecido" encontrado!`);
                 break;
             }
         }
 
-        // 2. Tentar Nome Fantasia
+        // 2. Tentar Razão Social apenas se não encontrou Favorecido
         if (!recipientMatch) {
+            console.log('🔍 Tentando Razão Social do Beneficiário...');
+            for (const pattern of patterns.razaoSocial) {
+                recipientMatch = text.match(pattern);
+                if (recipientMatch) {
+                    matchedPattern = 'razaoSocial';
+                    break;
+                }
+            }
+        }
+
+        // 3. Tentar Nome Fantasia
+        if (!recipientMatch) {
+            console.log('🔍 Tentando Nome Fantasia...');
             for (const pattern of patterns.nomeFantasia) {
                 recipientMatch = text.match(pattern);
                 if (recipientMatch) {
@@ -208,8 +234,9 @@ class BradescoTemplate {
             }
         }
 
-        // 3. Tentar Beneficiário genérico
+        // 4. Tentar Beneficiário genérico
         if (!recipientMatch) {
+            console.log('🔍 Tentando Beneficiário genérico...');
             for (const pattern of patterns.beneficiario) {
                 recipientMatch = text.match(pattern);
                 if (recipientMatch) {
@@ -269,9 +296,17 @@ class BradescoTemplate {
             const name = this.cleanRecipientName(recipientMatch[1]);
             result.recipient = name;
             result.success = true;
-            console.log(`✅ Destinatário extraído: ${name} (padrão: ${matchedPattern})`);
+
+            // Log especial quando o campo "Favorecido" é usado
+            if (matchedPattern === 'favorecido') {
+                console.log(`🎯✅ CAMPO FAVORECIDO EXTRAÍDO COM SUCESSO: ${name}`);
+                console.log(`🔥 Padrão usado: ${matchedPattern} - PRIORIDADE MÁXIMA`);
+            } else {
+                console.log(`✅ Destinatário extraído: ${name} (padrão: ${matchedPattern})`);
+            }
         } else {
             console.warn('⚠️ Destinatário não encontrado em transferência');
+            console.warn('🚨 CAMPO FAVORECIDO NÃO ENCONTRADO - Verificar layout do documento');
 
             // Debug: mostrar texto para análise manual
             console.log('🔍 Debug - Primeiras linhas do texto:');
@@ -281,6 +316,17 @@ class BradescoTemplate {
                     console.log(`Linha ${index + 1}: ${line.trim()}`);
                 }
             });
+
+            // Debug especial: procurar qualquer ocorrência de "Favorecido"
+            const favorecidoLines = text.split('\n').filter(line =>
+                line.toUpperCase().includes('FAVORECIDO')
+            );
+            if (favorecidoLines.length > 0) {
+                console.log('🔍 Linhas contendo "Favorecido" encontradas:');
+                favorecidoLines.forEach((line, index) => {
+                    console.log(`${index + 1}: ${line.trim()}`);
+                });
+            }
         }
 
         // Extrair valor usando lógica robusta
@@ -292,34 +338,44 @@ class BradescoTemplate {
         console.log('🧾 Extraindo dados de boleto Bradesco');
 
         const patterns = {
-            // Cedente
+            // 🔥 PRIORIDADE MÁXIMA: Campo "Favorecido"
+            favorecido: [
+                /Favorecido[:\s]*([A-ZÁÊÇÕÜÚ][A-ZÁÊÇÕÜÚ\s&.\-\/,]{5,60})(?:\s+(?:CPF|CNPJ|R\$|\d{2})|[\r\n]|$)/i,
+                /Favorecido[:\s]*([A-ZÁÊÇÕÜÚ][^\n\r]{5,60})(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i,
+                /Favorecido[:\s]+([A-ZÁÊÇÕÜÚ][^\n\r]*?)(?=\s+(?:CPF|CNPJ|R\$|Valor|\d{3}\.|[\r\n]))/i
+            ],
+            // Cedente (segundo plano)
             cedente: /Cedente[:\s]*([A-ZÁÊÇÕÜÚ][A-ZÁÊÇÕÜÚ\s&.\-\/]+?)(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i,
-            // Favorecido
-            favorecido: /Favorecido[:\s]*([A-ZÁÊÇÕÜÚ][A-ZÁÊÇÕÜÚ\s&.\-\/]+?)(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i,
-            // Empresa
+            // Empresa (terceiro plano)
             empresa: /Empresa[:\s]*([A-ZÁÊÇÕÜÚ][A-ZÁÊÇÕÜÚ\s&.\-\/]+?)(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i
         };
 
-        // Tentar extrair cedente/favorecido
         let recipientMatch = null;
         let matchedPattern = '';
 
-        // Tentar cedente primeiro
-        recipientMatch = text.match(patterns.cedente);
-        if (recipientMatch) {
-            matchedPattern = 'cedente';
-        }
-
-        // Tentar favorecido
-        if (!recipientMatch) {
-            recipientMatch = text.match(patterns.favorecido);
+        // 🔥 PRIORIDADE 1: SEMPRE tentar FAVORECIDO primeiro
+        console.log('🎯 Tentando extrair campo "Favorecido" em boleto...');
+        for (const pattern of patterns.favorecido) {
+            recipientMatch = text.match(pattern);
             if (recipientMatch) {
                 matchedPattern = 'favorecido';
+                console.log(`✅ Campo "Favorecido" encontrado em boleto!`);
+                break;
             }
         }
 
-        // Tentar empresa
+        // 2. Tentar cedente apenas se não encontrou Favorecido
         if (!recipientMatch) {
+            console.log('🔍 Tentando Cedente...');
+            recipientMatch = text.match(patterns.cedente);
+            if (recipientMatch) {
+                matchedPattern = 'cedente';
+            }
+        }
+
+        // 3. Tentar empresa como último recurso
+        if (!recipientMatch) {
+            console.log('🔍 Tentando Empresa...');
             recipientMatch = text.match(patterns.empresa);
             if (recipientMatch) {
                 matchedPattern = 'empresa';
@@ -330,9 +386,28 @@ class BradescoTemplate {
             const name = this.cleanRecipientName(recipientMatch[1]);
             result.recipient = name;
             result.success = true;
-            console.log(`✅ Cedente/Favorecido extraído: ${name} (padrão: ${matchedPattern})`);
+
+            // Log especial quando o campo "Favorecido" é usado em boleto
+            if (matchedPattern === 'favorecido') {
+                console.log(`🎯✅ CAMPO FAVORECIDO EXTRAÍDO EM BOLETO: ${name}`);
+                console.log(`🔥 Padrão usado: ${matchedPattern} - PRIORIDADE MÁXIMA`);
+            } else {
+                console.log(`✅ Cedente/Favorecido extraído: ${name} (padrão: ${matchedPattern})`);
+            }
         } else {
             console.warn('⚠️ Cedente/Favorecido não encontrado em boleto');
+            console.warn('🚨 CAMPO FAVORECIDO NÃO ENCONTRADO EM BOLETO - Verificar layout');
+
+            // Debug especial: procurar qualquer ocorrência de "Favorecido"
+            const favorecidoLines = text.split('\n').filter(line =>
+                line.toUpperCase().includes('FAVORECIDO')
+            );
+            if (favorecidoLines.length > 0) {
+                console.log('🔍 Linhas contendo "Favorecido" encontradas em boleto:');
+                favorecidoLines.forEach((line, index) => {
+                    console.log(`${index + 1}: ${line.trim()}`);
+                });
+            }
         }
 
         // Extrair valor usando lógica robusta
@@ -526,8 +601,8 @@ class BradescoTemplate {
         let name = rawName.trim();
         console.log('🧹 Limpando nome:', name);
 
-        // Remover prefixos comuns (mas de forma mais cuidadosa)
-        name = name.replace(/^(Nome|Razão Social|Beneficiário|Cedente|Favorecido|Empresa)[:\s]*/i, '');
+        // Remover prefixos comuns (incluindo "Favorecido" com prioridade)
+        name = name.replace(/^(Favorecido|Nome|Razão Social|Beneficiário|Cedente|Empresa)[:\s]*/i, '');
 
         // Remover sufixos comuns (CPF, CNPJ, etc.) mas de forma mais precisa
         name = name.replace(/\s+(CPF|CNPJ|RG)[:\s]*[\d\.\-\/]*$/i, '');
@@ -536,17 +611,32 @@ class BradescoTemplate {
         name = name.replace(/\s+\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, ''); // CNPJ
         name = name.replace(/\s+\d{3}\.\d{3}\.\d{3}-\d{2}$/, ''); // CPF
 
-        // Remover códigos e números no final
+        // Remover códigos e números no final, mas preservar números que fazem parte do nome
         name = name.replace(/\s+\d{3,}[\d.-]*$/, '');
+
+        // Remover padrões específicos que aparecem após favorecidos
+        name = name.replace(/\s+R\$.*$/i, ''); // Remove valor que às vezes aparece depois
+        name = name.replace(/\s+Valor.*$/i, ''); // Remove "Valor" que pode aparecer
+        name = name.replace(/\s+\d{3}\..*$/i, ''); // Remove códigos que começam com 3 dígitos
 
         // Normalizar espaços múltiplos
         name = name.replace(/\s+/g, ' ').trim();
 
-        // Remover caracteres especiais problemáticos, mas manter alguns válidos
-        name = name.replace(/[^\w\s&.\-]/g, '');
+        // Remover caracteres especiais problemáticos, mas manter alguns válidos para empresas
+        name = name.replace(/[^\w\s&.\-,]/g, '');
 
         // Remover espaços extras novamente
         name = name.replace(/\s+/g, ' ').trim();
+
+        // Validações específicas para campo "Favorecido"
+        // Se o nome contém palavras-chave do banco, provavelmente é inválido
+        const invalidKeywords = ['BRADESCO', 'BANCO', 'AGENCIA', 'CONTA', 'OPERACAO'];
+        for (const keyword of invalidKeywords) {
+            if (name.toUpperCase().includes(keyword)) {
+                console.warn('⚠️ Nome contém palavra-chave inválida:', keyword);
+                return 'DESTINATÁRIO NÃO ENCONTRADO';
+            }
+        }
 
         // Validar se o nome resultante faz sentido
         if (name.length < 3) {
