@@ -1,14 +1,8 @@
 // PDF Splitting Module
-// CORREÇÃO: Removida inicialização duplicada para evitar event listeners duplos
-// e consequente download duplicado de arquivos (Bug corrigido em 27/06/2025)
-// MELHORIAS: Adicionada sanitização de nomes de arquivo, melhor tratamento de erros
-// e continuidade de processamento mesmo com falhas em arquivos individuais
 class PDFSplitter {
     constructor() {
-        console.log('🔧 Inicializando PDFSplitter...');
         this.isProcessing = false;
         this.initializeSplitFeatures();
-        console.log('✅ PDFSplitter inicializado com sucesso!');
     }
 
     initializeSplitFeatures() {
@@ -67,7 +61,7 @@ class PDFSplitter {
     }
 
     async displayFileInfo(file) {
-        console.log('🔍 Iniciando displayFileInfo para:', file.name);
+
 
         // Aguardar um pouco para garantir que o DOM está pronto
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -85,7 +79,7 @@ class PDFSplitter {
         });
 
         if (!fileInfoContainer) {
-            console.warn('❌ Container split-file-info não encontrado');
+
             return;
         }
 
@@ -103,7 +97,7 @@ class PDFSplitter {
         fileName.textContent = file.name;
         fileSize.textContent = this.formatFileSize(file.size);
 
-        console.log(`📄 Exibindo informações para: ${file.name}`);
+
 
         // Tentar obter o número de páginas
         try {
@@ -111,22 +105,22 @@ class PDFSplitter {
             const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
             const pageCount = pdfDoc.getPageCount();
             filePages.textContent = `${pageCount} página${pageCount !== 1 ? 's' : ''}`;
-            console.log(`📊 PDF carregado: ${pageCount} página(s)`);
+
         } catch (error) {
-            console.warn('⚠️ Erro ao obter informações do PDF:', error);
+
             filePages.textContent = 'Informação não disponível';
         }
 
         fileInfoContainer.classList.remove('hidden');
-        console.log('✅ Informações do arquivo exibidas com sucesso');
+
     }
 
     async splitPDFs() {
-        console.log('splitPDFs() chamada');
+
 
         // Verificar se já está processando para evitar execução dupla
         if (this.isProcessing) {
-            console.log('Já está processando, ignorando nova chamada');
+
             return;
         }
 
@@ -138,7 +132,7 @@ class PDFSplitter {
 
             if (this.selectedFile) {
                 filesToProcess = [this.selectedFile];
-                console.log('Usando selectedFile:', this.selectedFile.name);
+
             } else {
                 // Fallback para arquivos do upload geral
                 const uploadedFiles = CORE.getUploadedFiles().filter(file => file.type === 'application/pdf');
@@ -148,7 +142,7 @@ class PDFSplitter {
                 }
                 // Para operação de split, usar apenas o primeiro arquivo
                 filesToProcess = [uploadedFiles[0]];
-                console.log('Usando uploadedFiles[0]:', uploadedFiles[0].name);
+
 
                 if (uploadedFiles.length > 1) {
                     UI.showToast('Apenas o primeiro arquivo será usado para divisão', 'warning');
@@ -182,7 +176,7 @@ class PDFSplitter {
                     UI.addLog(`✅ PDF dividido com sucesso: ${file.name}`);
                     processedCount++;
                 } catch (error) {
-                    console.error(`Erro ao processar ${file.name}:`, error);
+
                     UI.addLog(`❌ Erro ao processar ${file.name}: ${error.message}`);
                     errorCount++;
                 }
@@ -200,7 +194,7 @@ class PDFSplitter {
             }
 
         } catch (error) {
-            console.error('Erro geral na divisão de PDFs:', error);
+
             UI.hideProgress();
             UI.showToast('Erro crítico durante a divisão dos PDFs', 'error');
         } finally {
@@ -232,7 +226,7 @@ class PDFSplitter {
             }
 
         } catch (error) {
-            console.error(`Erro ao processar ${file.name}:`, error);
+
             throw error;
         }
     }
@@ -298,7 +292,7 @@ class PDFSplitter {
 
             } catch (error) {
                 errorCount++;
-                console.error(`Erro ao processar página ${i + 1}:`, error);
+
                 UI.addLog(`❌ Erro na página ${i + 1}: ${error.message}`);
 
                 // Continuar processando outras páginas mesmo com erro
@@ -356,7 +350,7 @@ class PDFSplitter {
             UI.addLog(`✅ ${resultMessage}`);
 
         } catch (error) {
-            console.error('Erro na divisão pela metade:', error);
+
             UI.addLog(`❌ Erro na divisão pela metade: ${error.message}`);
             throw new Error(`Falha na divisão pela metade: ${error.message}`);
         }
@@ -440,7 +434,7 @@ class PDFSplitter {
 
             } catch (error) {
                 errorCount++;
-                console.error(`Erro ao processar intervalo ${i + 1}:`, error);
+
                 UI.addLog(`❌ Erro no intervalo ${i + 1}: ${error.message}`);
 
                 // Continuar processando outros intervalos mesmo com erro
@@ -532,7 +526,7 @@ class PDFSplitter {
 
     downloadPDF(pdfBytes, fileName) {
         try {
-            console.log(`🔽 Iniciando download: ${fileName}`);
+
             UI.addLog(`📥 Download iniciado: ${fileName}`);
 
             // Verificar se o nome do arquivo é válido
@@ -562,10 +556,10 @@ class PDFSplitter {
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
 
-            console.log(`✅ Download concluído: ${sanitizedFileName}`);
+
 
         } catch (error) {
-            console.error(`❌ Erro no download de ${fileName}:`, error);
+
             UI.addLog(`❌ Erro no download de ${fileName}: ${error.message}`);
             throw error;
         }
@@ -630,7 +624,7 @@ class PDFSplitter {
 
 // Função de teste para verificar disponibilidade dos elementos
 function testSplitElements() {
-    console.log('🧪 Testando disponibilidade dos elementos da aba Split...');
+
 
     const elements = {
         'split-file-info': document.getElementById('split-file-info'),
@@ -640,13 +634,13 @@ function testSplitElements() {
         'split-pdfs': document.getElementById('split-pdfs')
     };
 
-    console.log('📊 Resultados do teste:');
+
     Object.entries(elements).forEach(([id, element]) => {
         const status = element ? '✅' : '❌';
-        console.log(`${status} ${id}: ${!!element}`);
+
     });
 
-    console.log('🧪 Teste de elementos concluído!');
+
     return elements;
 }
 

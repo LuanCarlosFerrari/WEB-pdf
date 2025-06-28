@@ -5,12 +5,12 @@ class ItauTemplate {
     constructor() {
         this.bankName = 'Itaú';
         this.supportedTypes = ['PIX', 'Boleto', 'TED'];
-        console.log('🏦 Template Itaú inicializado');
+        
     }
 
     // Método principal para extrair dados do texto
     extractData(text, pageNum) {
-        console.log('🏦 Extraindo dados do Itaú da página', pageNum);
+        
 
         const result = {
             pageNumber: pageNum,
@@ -27,7 +27,7 @@ class ItauTemplate {
             const documentType = this.detectDocumentType(text);
             result.type = documentType;
 
-            console.log(`📄 Tipo de documento detectado: ${documentType}`);
+            
 
             // Extrair dados baseado no tipo
             switch (documentType) {
@@ -41,14 +41,14 @@ class ItauTemplate {
                     this.extractTedData(text, result);
                     break;
                 default:
-                    console.warn(`⚠️ Tipo de documento não reconhecido para página ${pageNum}`);
+                    
                     break;
             }
 
-            console.log(`📊 Dados extraídos da página ${pageNum}:`, result);
+            
 
         } catch (error) {
-            console.error(`❌ Erro ao extrair dados da página ${pageNum}:`, error);
+            
         }
 
         return result;
@@ -90,7 +90,7 @@ class ItauTemplate {
 
     // Extrair dados específicos do PIX
     extractPixData(text, result) {
-        console.log('📱 Extraindo dados de PIX');
+        
 
         // Padrões específicos para PIX
         const patterns = {
@@ -127,10 +127,10 @@ class ItauTemplate {
 
     // Extrair dados específicos do Boleto
     extractBoletoData(text, result) {
-        console.log('🧾 Extraindo dados de Boleto');
+        
 
         // Debug: mostrar o texto que está sendo analisado
-        console.log('📝 Texto do boleto:', text.substring(0, 500));
+        
 
         // Padrões específicos para Boleto
         const patterns = {
@@ -156,9 +156,9 @@ class ItauTemplate {
             beneficiario = beneficiario.replace(/\s+/g, ' ').trim();
             result.recipient = this.formatName(beneficiario);
             result.success = true;
-            console.log(`✅ Beneficiário extraído: ${result.recipient}`);
+            
         } else {
-            console.warn('⚠️ Beneficiário não encontrado no boleto');
+            
         }
 
         // Extrair valor - tentar múltiplos padrões
@@ -223,25 +223,25 @@ class ItauTemplate {
 
         if (valueMatch && valueMatch[1]) {
             result.value = this.formatValue(valueMatch[1]);
-            console.log(`✅ Valor extraído: R$ ${result.value} (padrão: ${matchedPattern})`);
+            
         } else {
-            console.warn('⚠️ Valor não encontrado no boleto');
-            console.log('🔍 Tentando encontrar qualquer valor no texto...');
+            
+            
 
             // Debug: mostrar todos os números encontrados
             const allNumbers = text.match(/[\d.,]+/g);
             if (allNumbers) {
-                console.log('🔢 Números encontrados:', allNumbers);
+                
             }
         }
     }
 
     // Extrair dados específicos do TED
     extractTedData(text, result) {
-        console.log('🏛️ Extraindo dados de TED');
+        
 
         // Debug: mostrar o texto que está sendo analisado
-        console.log('📝 Texto do TED:', text.substring(0, 500));
+        
 
         // Padrões específicos para TED
         const patterns = {
@@ -292,14 +292,14 @@ class ItauTemplate {
 
             result.recipient = this.formatName(favorecido);
             result.success = true;
-            console.log(`✅ Favorecido extraído: ${result.recipient} (padrão: ${matchedPattern})`);
+            
         } else {
-            console.warn('⚠️ Favorecido não encontrado no TED');
+            
 
             // Debug: tentar encontrar qualquer ocorrência de "favorecido"
             const debugMatch = text.match(/favorecido[^a-z]*([A-Z][^0-9\r\n]+)/i);
             if (debugMatch) {
-                console.log('🔍 Possível favorecido encontrado:', debugMatch[1]);
+                
             }
         }
 
@@ -311,9 +311,9 @@ class ItauTemplate {
 
         if (valueMatch) {
             result.value = this.formatValue(valueMatch[1]);
-            console.log(`✅ Valor extraído: R$ ${result.value}`);
+            
         } else {
-            console.warn('⚠️ Valor não encontrado no TED');
+            
         }
     }
 
@@ -340,7 +340,7 @@ class ItauTemplate {
         }
 
         const result = parseFloat(cleanValue) || 0;
-        console.log(`🔢 parseValue: "${valueStr}" -> "${cleanValue}" -> ${result}`);
+        
         return result;
     }
 

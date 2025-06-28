@@ -1,9 +1,7 @@
 // PDF Page Extraction Module
 class PDFExtractor {
     constructor() {
-        console.log('🔧 Inicializando PDFExtractor...');
         this.initializeExtractFeatures();
-        console.log('✅ PDFExtractor inicializado com sucesso!');
     }
 
     initializeExtractFeatures() {
@@ -16,12 +14,12 @@ class PDFExtractor {
 
         if (extractBtn) {
             extractBtn.addEventListener('click', () => {
-                console.log('🔄 Botão de extração clicado');
+
                 this.extractPages();
             });
-            console.log('✅ Event listener adicionado ao botão extract-pages');
+
         } else {
-            console.error('❌ Botão extract-pages não encontrado');
+
         }
 
         modeRadios.forEach(radio => {
@@ -32,7 +30,7 @@ class PDFExtractor {
 
         // Atualizar preview quando arquivos forem carregados
         document.addEventListener('filesUploaded', () => {
-            console.log('📁 Arquivos carregados - atualizando preview de extração');
+
             this.updateExtractPreview();
         });
     }
@@ -107,7 +105,7 @@ class PDFExtractor {
 
         const extractMode = document.querySelector('input[name="extract-mode"]:checked')?.value || 'first';
 
-        console.log(`🚀 Iniciando extração de páginas em ${files.length} arquivo(s) no modo: ${extractMode}`);
+
         UI.showProgress(0, 'Iniciando extração de páginas...');
 
         try {
@@ -127,11 +125,11 @@ class PDFExtractor {
                     successfulFiles++;
 
                     UI.addLog(`✅ Páginas extraídas de ${file.name}: ${extracted}`);
-                    console.log(`✅ Arquivo ${file.name} processado: ${extracted} página(s) extraída(s)`);
+
 
                 } catch (error) {
                     failedFiles++;
-                    console.error(`❌ Erro ao processar ${file.name}:`, error);
+
                     UI.addLog(`❌ Erro ao processar ${file.name}: ${error.message}`);
 
                     // Continuar com o próximo arquivo
@@ -163,10 +161,10 @@ class PDFExtractor {
                 UI.showToast('Todos os arquivos falharam na extração', 'error');
             }
 
-            console.log(`🏁 Extração finalizada: ${message}`);
+
 
         } catch (error) {
-            console.error('❌ Erro geral na extração de páginas:', error);
+
             UI.hideProgress();
             UI.showToast('Erro durante a extração de páginas', 'error');
         }
@@ -174,18 +172,18 @@ class PDFExtractor {
 
     async processSinglePDFExtraction(file, extractMode) {
         try {
-            console.log(`🔄 Processando ${file.name} no modo: ${extractMode}`);
+
 
             // Carregar o PDF usando PDF-lib
             const arrayBuffer = await file.arrayBuffer();
             const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
             const totalPages = pdfDoc.getPageCount();
 
-            console.log(`📖 PDF carregado: ${file.name} (${totalPages} páginas)`);
+
             UI.addLog(`PDF carregado: ${file.name} (${totalPages} páginas)`);
 
             if (totalPages === 0) {
-                console.log(`⚠️ PDF ${file.name} não tem páginas`);
+
                 UI.addLog(`Aviso: ${file.name} não tem páginas para extrair`);
                 return 0;
             }
@@ -194,46 +192,46 @@ class PDFExtractor {
 
             switch (extractMode) {
                 case 'first':
-                    console.log(`🔸 Extraindo primeira página de ${file.name}`);
+
                     extractedCount = await this.extractFirstPage(pdfDoc, file.name);
                     break;
                 case 'last':
-                    console.log(`🔹 Extraindo última página de ${file.name}`);
+
                     extractedCount = await this.extractLastPage(pdfDoc, file.name, totalPages);
                     break;
                 case 'odd':
-                    console.log(`🔸 Extraindo páginas ímpares de ${file.name}`);
+
                     extractedCount = await this.extractOddPages(pdfDoc, file.name, totalPages);
                     break;
                 case 'even':
-                    console.log(`🔹 Extraindo páginas pares de ${file.name}`);
+
                     extractedCount = await this.extractEvenPages(pdfDoc, file.name, totalPages);
                     break;
                 case 'custom':
-                    console.log(`🎯 Extraindo páginas customizadas de ${file.name}`);
+
                     extractedCount = await this.extractCustomPages(pdfDoc, file.name, totalPages);
                     break;
                 default:
-                    console.log(`⚠️ Modo não reconhecido: ${extractMode}, usando primeira página`);
+
                     extractedCount = await this.extractFirstPage(pdfDoc, file.name);
             }
 
-            console.log(`✅ Extração de ${file.name} concluída: ${extractedCount} página(s)`);
+
             return extractedCount;
 
         } catch (error) {
-            console.error(`❌ Erro ao processar ${file.name}:`, error);
+
             UI.addLog(`Erro ao processar ${file.name}: ${error.message}`);
             throw error;
         }
     }
 
     async extractFirstPage(pdfDoc, originalName) {
-        console.log(`🔢 Extraindo primeira página de ${originalName}`);
+
 
         const totalPages = pdfDoc.getPageCount();
         if (totalPages === 0) {
-            console.log('⚠️ PDF não tem páginas');
+
             return 0;
         }
 
@@ -242,7 +240,7 @@ class PDFExtractor {
             const [firstPage] = await newPdf.copyPages(pdfDoc, [0]);
             newPdf.addPage(firstPage);
 
-            console.log(`✅ Primeira página copiada com sucesso`);
+
 
             const pdfBytes = await newPdf.save();
             const baseName = originalName.replace(/\.pdf$/i, '');
@@ -252,20 +250,20 @@ class PDFExtractor {
 
             const message = `Primeira página extraída: ${fileName}`;
             UI.addLog(message);
-            console.log(`✅ ${message}`);
+
 
             return 1;
         } catch (error) {
-            console.error(`❌ Erro ao extrair primeira página de ${originalName}:`, error);
+
             throw error;
         }
     }
 
     async extractLastPage(pdfDoc, originalName, totalPages) {
-        console.log(`🔢 Extraindo última página de ${originalName} (página ${totalPages})`);
+
 
         if (totalPages === 0) {
-            console.log('⚠️ PDF não tem páginas');
+
             return 0;
         }
 
@@ -274,7 +272,7 @@ class PDFExtractor {
             const [lastPage] = await newPdf.copyPages(pdfDoc, [totalPages - 1]);
             newPdf.addPage(lastPage);
 
-            console.log(`✅ Última página copiada com sucesso`);
+
 
             const pdfBytes = await newPdf.save();
             const baseName = originalName.replace(/\.pdf$/i, '');
@@ -284,17 +282,17 @@ class PDFExtractor {
 
             const message = `Última página extraída: ${fileName}`;
             UI.addLog(message);
-            console.log(`✅ ${message}`);
+
 
             return 1;
         } catch (error) {
-            console.error(`❌ Erro ao extrair última página de ${originalName}:`, error);
+
             throw error;
         }
     }
 
     async extractOddPages(pdfDoc, originalName, totalPages) {
-        console.log(`🔢 Extraindo páginas ímpares de ${originalName} (${totalPages} páginas total)`);
+
 
         const oddPageIndices = [];
         // Páginas ímpares: 1, 3, 5, 7... (índices 0, 2, 4, 6...)
@@ -302,11 +300,11 @@ class PDFExtractor {
             oddPageIndices.push(i);
         }
 
-        console.log(`📝 Índices das páginas ímpares:`, oddPageIndices);
-        console.log(`📊 Páginas ímpares a extrair: ${oddPageIndices.map(idx => idx + 1).join(', ')}`);
+
+
 
         if (oddPageIndices.length === 0) {
-            console.log('⚠️ Nenhuma página ímpar encontrada');
+
             return 0;
         }
 
@@ -314,11 +312,11 @@ class PDFExtractor {
             const newPdf = await PDFLib.PDFDocument.create();
             const copiedPages = await newPdf.copyPages(pdfDoc, oddPageIndices);
 
-            console.log(`✅ ${copiedPages.length} páginas copiadas com sucesso`);
+
 
             copiedPages.forEach((page, index) => {
                 newPdf.addPage(page);
-                console.log(`📄 Página ${oddPageIndices[index] + 1} adicionada ao novo PDF`);
+
             });
 
             const pdfBytes = await newPdf.save();
@@ -329,17 +327,17 @@ class PDFExtractor {
 
             const message = `Páginas ímpares extraídas: ${fileName} (${oddPageIndices.length} páginas: ${oddPageIndices.map(idx => idx + 1).join(', ')})`;
             UI.addLog(message);
-            console.log(`✅ ${message}`);
+
 
             return oddPageIndices.length;
         } catch (error) {
-            console.error(`❌ Erro ao extrair páginas ímpares de ${originalName}:`, error);
+
             throw error;
         }
     }
 
     async extractEvenPages(pdfDoc, originalName, totalPages) {
-        console.log(`🔢 Extraindo páginas pares de ${originalName} (${totalPages} páginas total)`);
+
 
         const evenPageIndices = [];
         // Páginas pares: 2, 4, 6, 8... (índices 1, 3, 5, 7...)
@@ -347,11 +345,11 @@ class PDFExtractor {
             evenPageIndices.push(i);
         }
 
-        console.log(`📝 Índices das páginas pares:`, evenPageIndices);
-        console.log(`📊 Páginas pares a extrair: ${evenPageIndices.map(idx => idx + 1).join(', ')}`);
+
+
 
         if (evenPageIndices.length === 0) {
-            console.log('⚠️ Nenhuma página par encontrada');
+
             return 0;
         }
 
@@ -359,11 +357,11 @@ class PDFExtractor {
             const newPdf = await PDFLib.PDFDocument.create();
             const copiedPages = await newPdf.copyPages(pdfDoc, evenPageIndices);
 
-            console.log(`✅ ${copiedPages.length} páginas copiadas com sucesso`);
+
 
             copiedPages.forEach((page, index) => {
                 newPdf.addPage(page);
-                console.log(`📄 Página ${evenPageIndices[index] + 1} adicionada ao novo PDF`);
+
             });
 
             const pdfBytes = await newPdf.save();
@@ -374,38 +372,38 @@ class PDFExtractor {
 
             const message = `Páginas pares extraídas: ${fileName} (${evenPageIndices.length} páginas: ${evenPageIndices.map(idx => idx + 1).join(', ')})`;
             UI.addLog(message);
-            console.log(`✅ ${message}`);
+
 
             return evenPageIndices.length;
         } catch (error) {
-            console.error(`❌ Erro ao extrair páginas pares de ${originalName}:`, error);
+
             throw error;
         }
     }
 
     async extractCustomPages(pdfDoc, originalName, totalPages) {
-        console.log(`🎯 Extraindo páginas customizadas de ${originalName} (${totalPages} páginas total)`);
+
 
         const rangesInput = document.getElementById('extract-ranges')?.value || '';
 
         if (!rangesInput.trim()) {
-            console.log('⚠️ Nenhuma página especificada para extração customizada');
+
             UI.showToast('Por favor, especifique as páginas a serem extraídas', 'warning');
             return 0;
         }
 
-        console.log(`📝 Entrada de páginas: "${rangesInput}"`);
+
 
         const baseName = originalName.replace(/\.pdf$/i, '');
         const ranges = this.parsePageRanges(rangesInput, totalPages);
 
         if (ranges.length === 0) {
-            console.log('❌ Páginas especificadas inválidas');
+
             UI.showToast('Páginas especificadas inválidas', 'error');
             return 0;
         }
 
-        console.log(`📊 Intervalos parseados:`, ranges);
+
 
         // Coletar todos os índices de páginas únicos
         const allPageIndices = new Set();
@@ -419,11 +417,11 @@ class PDFExtractor {
 
         const pageIndicesArray = Array.from(allPageIndices).sort((a, b) => a - b);
 
-        console.log(`📄 Páginas a extrair (índices):`, pageIndicesArray);
-        console.log(`📊 Páginas a extrair (números): ${pageIndicesArray.map(idx => idx + 1).join(', ')}`);
+
+
 
         if (pageIndicesArray.length === 0) {
-            console.log('⚠️ Nenhuma página válida encontrada para extração');
+
             return 0;
         }
 
@@ -431,11 +429,11 @@ class PDFExtractor {
             const newPdf = await PDFLib.PDFDocument.create();
             const copiedPages = await newPdf.copyPages(pdfDoc, pageIndicesArray);
 
-            console.log(`✅ ${copiedPages.length} páginas copiadas com sucesso`);
+
 
             copiedPages.forEach((page, index) => {
                 newPdf.addPage(page);
-                console.log(`📄 Página ${pageIndicesArray[index] + 1} adicionada ao novo PDF`);
+
             });
 
             const pdfBytes = await newPdf.save();
@@ -445,17 +443,17 @@ class PDFExtractor {
 
             const message = `Páginas customizadas extraídas: ${fileName} (${pageIndicesArray.length} páginas: ${pageIndicesArray.map(idx => idx + 1).join(', ')})`;
             UI.addLog(message);
-            console.log(`✅ ${message}`);
+
 
             return pageIndicesArray.length;
         } catch (error) {
-            console.error(`❌ Erro ao extrair páginas customizadas de ${originalName}:`, error);
+
             throw error;
         }
     }
 
     parsePageRanges(rangesInput, totalPages) {
-        console.log(`🔍 Parseando ranges: "${rangesInput}" para PDF com ${totalPages} páginas`);
+
 
         const ranges = [];
         const parts = rangesInput.split(',');
@@ -465,7 +463,7 @@ class PDFExtractor {
 
             if (!trimmed) continue; // Ignorar partes vazias
 
-            console.log(`🔸 Processando parte: "${trimmed}"`);
+
 
             if (trimmed.includes('-')) {
                 const dashParts = trimmed.split('-');
@@ -475,25 +473,25 @@ class PDFExtractor {
 
                     if (start && end && start <= end && start >= 1 && end <= totalPages) {
                         ranges.push({ start, end });
-                        console.log(`✅ Range válido: ${start}-${end}`);
+
                     } else {
-                        console.log(`❌ Range inválido: ${start}-${end} (total: ${totalPages})`);
+
                     }
                 } else {
-                    console.log(`❌ Formato de range inválido: "${trimmed}"`);
+
                 }
             } else {
                 const page = parseInt(trimmed);
                 if (page && page >= 1 && page <= totalPages) {
                     ranges.push({ start: page, end: page });
-                    console.log(`✅ Página válida: ${page}`);
+
                 } else {
-                    console.log(`❌ Página inválida: ${page} (total: ${totalPages})`);
+
                 }
             }
         }
 
-        console.log(`📊 Ranges parseados:`, ranges);
+
         return ranges;
     }
 
@@ -502,7 +500,7 @@ class PDFExtractor {
             // Sanitizar nome do arquivo
             const sanitizedFileName = this.sanitizeFileName(fileName);
 
-            console.log(`💾 Fazendo download de: ${sanitizedFileName}`);
+
 
             const blob = new Blob([pdfBytes], { type: 'application/pdf' });
             const link = document.createElement('a');
@@ -517,9 +515,9 @@ class PDFExtractor {
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
 
-            console.log(`✅ Download iniciado: ${sanitizedFileName}`);
+
         } catch (error) {
-            console.error(`❌ Erro no download de ${fileName}:`, error);
+
             throw error;
         }
     }
@@ -605,7 +603,7 @@ class PDFExtractor {
                         totalPages += pageCount > 0 ? 1 : 0;
                 }
             } catch (error) {
-                console.error(`Erro ao analisar ${file.name}:`, error);
+
             }
         }
 
@@ -615,7 +613,7 @@ class PDFExtractor {
 
 // Função de teste para validar extração de páginas ímpares e pares
 function testPageExtractionLogic() {
-    console.log('🧪 Testando lógica de extração de páginas...');
+
 
     // Simular diferentes cenários de PDFs
     const testCases = [
@@ -626,7 +624,7 @@ function testPageExtractionLogic() {
     ];
 
     testCases.forEach(testCase => {
-        console.log(`\n📄 ${testCase.name} (${testCase.totalPages} páginas):`);
+
 
         // Testar páginas ímpares
         const oddIndices = [];
@@ -634,7 +632,7 @@ function testPageExtractionLogic() {
             oddIndices.push(i);
         }
         const oddPages = oddIndices.map(idx => idx + 1);
-        console.log(`  🔸 Páginas ímpares: ${oddPages.join(', ')} (${oddPages.length} páginas)`);
+
 
         // Testar páginas pares
         const evenIndices = [];
@@ -642,16 +640,16 @@ function testPageExtractionLogic() {
             evenIndices.push(i);
         }
         const evenPages = evenIndices.map(idx => idx + 1);
-        console.log(`  🔹 Páginas pares: ${evenPages.join(', ')} (${evenPages.length} páginas)`);
+
 
         // Verificar se todas as páginas estão cobertas
         const allPages = [...oddPages, ...evenPages].sort((a, b) => a - b);
         const expectedPages = Array.from({ length: testCase.totalPages }, (_, i) => i + 1);
         const isComplete = JSON.stringify(allPages) === JSON.stringify(expectedPages);
-        console.log(`  ✅ Todas as páginas cobertas: ${isComplete ? 'SIM' : 'NÃO'}`);
+
     });
 
-    console.log('\n🧪 Teste de lógica concluído!');
+
 }
 
 // Inicializar quando o DOM estiver pronto

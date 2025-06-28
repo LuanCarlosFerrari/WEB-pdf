@@ -16,12 +16,12 @@ class PDFWatermarker {
 
         if (watermarkBtn) {
             watermarkBtn.addEventListener('click', () => {
-                console.log('🔄 Botão de marca d\'água clicado');
+                
                 this.addWatermarkToPDFs();
             });
-            console.log('✅ Event listener adicionado ao botão add-watermark');
+            
         } else {
-            console.error('❌ Botão add-watermark não encontrado');
+            
         }
 
         if (previewBtn) {
@@ -50,23 +50,23 @@ class PDFWatermarker {
             if (element) {
                 // Debug especial para o campo de texto
                 if (id === 'watermark-text') {
-                    console.log('Configurando eventos para campo de texto da marca d\'água');
+                    
 
                     // Múltiplos eventos para garantir funcionalidade
                     ['input', 'keyup', 'change', 'paste'].forEach(eventType => {
                         element.addEventListener(eventType, (e) => {
-                            console.log(`Evento ${eventType} no campo de texto:`, e.target.value);
+                            
                             this.updateWatermarkPreview();
                         });
                     });
 
                     // Verificar se o campo está focusável
                     element.addEventListener('focus', () => {
-                        console.log('Campo de texto focado');
+                        
                     });
 
                     element.addEventListener('blur', () => {
-                        console.log('Campo de texto perdeu o foco');
+                        
                     });
                 } else {
                     element.addEventListener('input', () => this.updateWatermarkPreview());
@@ -190,7 +190,7 @@ class PDFWatermarker {
             UI.showToast(`Marca d'água adicionada em ${files.length} arquivo(s)`, 'success');
 
         } catch (error) {
-            console.error('Erro ao adicionar marca d\'água:', error);
+            
             UI.hideProgress();
             UI.showToast('Erro durante a adição da marca d\'água', 'error');
         }
@@ -244,7 +244,7 @@ class PDFWatermarker {
             UI.addLog(`PDF com marca d'água criado: ${watermarkedFileName}`);
 
         } catch (error) {
-            console.error(`Erro ao processar ${file.name}:`, error);
+            
             throw error;
         }
     }
@@ -406,7 +406,7 @@ class PDFWatermarker {
 
                 this.updateWatermarkPreview();
             } catch (error) {
-                console.error('Erro ao carregar configurações salvas:', error);
+                
             }
         }
     }
@@ -443,7 +443,7 @@ class PDFWatermarker {
             UI.showToast(`Processamento em lote concluído! ${processedCount} arquivo(s) criado(s)`, 'success');
 
         } catch (error) {
-            console.error('Erro no processamento em lote:', error);
+            
             UI.hideProgress();
             UI.showToast('Erro durante o processamento em lote', 'error');
         }

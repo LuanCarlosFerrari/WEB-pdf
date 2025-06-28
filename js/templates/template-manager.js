@@ -3,7 +3,7 @@ class TemplateManager {
     constructor() {
         this.templates = new Map();
         this.loadedTemplates = new Set();
-        console.log('📋 TemplateManager inicializado');
+        
         this.init();
     }
 
@@ -27,13 +27,13 @@ class TemplateManager {
         await this.loadTemplate('itau');
 
         // Log dos templates registrados
-        console.log('📋 Templates registrados:', Array.from(this.templates.keys()));
-        console.log('📋 Templates disponíveis:', this.getAvailableTemplates());
+        
+        
     }
 
     registerTemplate(key, config) {
         this.templates.set(key, config);
-        console.log(`📋 Template registrado: ${key} - ${config.name}`);
+        
     }
 
     async loadTemplate(templateKey) {
@@ -42,7 +42,7 @@ class TemplateManager {
         }
 
         if (this.loadedTemplates.has(templateKey)) {
-            console.log(`📋 Template já carregado: ${templateKey}`);
+            
             return this.getTemplateInstance(templateKey);
         }
 
@@ -53,11 +53,11 @@ class TemplateManager {
             await this.loadScript(config.scriptPath);
             this.loadedTemplates.add(templateKey);
 
-            console.log(`✅ Template carregado: ${templateKey}`);
+            
             return this.getTemplateInstance(templateKey);
 
         } catch (error) {
-            console.error(`❌ Erro ao carregar template ${templateKey}:`, error);
+            
             throw error;
         }
     }
@@ -112,7 +112,7 @@ class TemplateManager {
             const template = await this.loadTemplate(templateKey);
             return template.extractData(text, pageNum);
         } catch (error) {
-            console.error(`❌ Erro na extração de dados:`, error);
+            
             return {
                 pageNumber: pageNum,
                 recipient: 'Erro na extração',

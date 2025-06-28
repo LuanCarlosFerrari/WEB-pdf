@@ -1,13 +1,11 @@
 // PDF Rename and Split Module - Multiple Files Support
 class PDFRenamer {
     constructor() {
-        console.log('🔧 Inicializando PDFRenamer com suporte a múltiplos arquivos...');
         this.currentFiles = []; // Changed from currentFile to support multiple files
         this.extractedData = []; // Will contain data for all files
         this.processedPages = [];
         this.templateManager = null;
         this.initializeRenameFeatures();
-        console.log('✅ PDFRenamer inicializado com sucesso!');
     }
 
     async initializeRenameFeatures() {
@@ -17,9 +15,9 @@ class PDFRenamer {
         // Inicializar o gerenciador de templates
         try {
             this.templateManager = new TemplateManager();
-            console.log('📋 Template Manager inicializado');
+
         } catch (error) {
-            console.error('❌ Erro ao inicializar Template Manager:', error);
+
         }
     }
 
@@ -31,21 +29,21 @@ class PDFRenamer {
 
         if (processBtn) {
             processBtn.addEventListener('click', () => {
-                console.log('🔄 Botão de processamento clicado - múltiplos arquivos');
+
                 this.processAndRenameAllFiles();
             });
         }
 
         if (previewBtn) {
             previewBtn.addEventListener('click', () => {
-                console.log('👁️ Botão de preview clicado - múltiplos arquivos');
+
                 this.analyzeAllFiles();
             });
         }
 
         if (downloadAllBtn) {
             downloadAllBtn.addEventListener('click', () => {
-                console.log('📁 Botão de download organizado clicado');
+
                 this.downloadOrganizedZip();
             });
         }
@@ -60,7 +58,7 @@ class PDFRenamer {
 
         // Atualizar preview quando arquivos forem carregados - múltiplos arquivos
         document.addEventListener('filesUploaded', () => {
-            console.log('📁 Arquivos carregados - atualizando preview de renomeação para múltiplos arquivos');
+
             this.updateRenamePreviewMultiple();
         });
     }
@@ -89,7 +87,7 @@ class PDFRenamer {
             customOptions.style.display = 'block';
         }
 
-        console.log(`🏦 Layout selecionado: ${layout}`);
+
     }
 
     updateRenamePreviewMultiple() {
@@ -117,7 +115,7 @@ class PDFRenamer {
 
         // Store all PDF files
         this.currentFiles = files;
-        console.log(`📂 ${files.length} arquivo(s) PDF carregado(s) para renomeação`);
+
 
         // Update files info display
         if (filesInfo && filesList) {
@@ -172,7 +170,7 @@ class PDFRenamer {
 
         try {
             const totalFiles = this.currentFiles.length;
-            console.log(`🔍 Iniciando análise de ${totalFiles} arquivo(s)`);
+
 
             UI.showProgress('Analisando arquivos...', 0);
             this.extractedData = [];
@@ -188,23 +186,23 @@ class PDFRenamer {
                     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
                     totalPagesCount += pdf.numPages;
                 } catch (error) {
-                    console.error(`❌ Erro ao contar páginas do arquivo ${file.name}:`, error);
+
                 }
             }
 
-            console.log(`📊 Total de páginas para processar: ${totalPagesCount}`);
+
 
             // Second pass: process all files
             for (let fileIndex = 0; fileIndex < this.currentFiles.length; fileIndex++) {
                 const file = this.currentFiles[fileIndex];
 
                 try {
-                    console.log(`📄 Processando arquivo ${fileIndex + 1}/${totalFiles}: ${file.name}`);
+
 
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
 
-                    console.log(`📄 PDF "${file.name}" carregado com ${pdf.numPages} páginas`);
+
 
                     // Update files list with page count
                     this.updateFilePageCount(fileIndex, pdf.numPages);
@@ -226,7 +224,7 @@ class PDFRenamer {
                         const textContent = await page.getTextContent();
                         const pageText = textContent.items.map(item => item.str).join(' ');
 
-                        console.log(`📝 Processando página ${pageNum} do arquivo "${file.name}"`);
+
 
                         let extractedInfo;
                         if (layout === 'itau') {
@@ -245,15 +243,15 @@ class PDFRenamer {
                         this.extractedData.push(extractedInfo);
                     }
 
-                    console.log(`✅ Arquivo "${file.name}" processado com sucesso`);
+
 
                 } catch (error) {
-                    console.error(`❌ Erro ao processar arquivo "${file.name}":`, error);
+
                     UI.showToast(`Erro ao processar ${file.name}: ${error.message}`, 'warning');
                 }
             }
 
-            console.log(`✅ Análise completa: ${this.extractedData.length} páginas processadas de ${totalFiles} arquivo(s)`);
+
 
             this.updatePreviewWithMultipleFilesData();
             UI.hideProgress();
@@ -262,7 +260,7 @@ class PDFRenamer {
             UI.showToast(`Análise completa: ${successCount}/${this.extractedData.length} páginas processadas com sucesso!`, 'success');
 
         } catch (error) {
-            console.error('❌ Erro ao analisar arquivos:', error);
+
             UI.hideProgress();
             UI.showToast('Erro ao analisar arquivos: ' + error.message, 'error');
         }
@@ -401,7 +399,7 @@ class PDFRenamer {
         }
 
         try {
-            console.log(`🔄 Iniciando processamento de ${this.currentFiles.length} arquivo(s)`);
+
             UI.showProgress('Processando e dividindo PDFs...', 0);
 
             this.processedPages = [];
@@ -417,16 +415,16 @@ class PDFRenamer {
                 dataByFile[data.fileName].push(data);
             });
 
-            console.log(`📊 Processando ${totalPages} páginas de ${Object.keys(dataByFile).length} arquivo(s)`);
+
 
             // Process each file
             for (const [fileName, fileData] of Object.entries(dataByFile)) {
-                console.log(`📄 Processando arquivo: ${fileName} (${fileData.length} páginas)`);
+
 
                 // Find the original file
                 const originalFile = this.currentFiles.find(f => f.name === fileName);
                 if (!originalFile) {
-                    console.error(`❌ Arquivo original não encontrado: ${fileName}`);
+
                     continue;
                 }
 
@@ -476,18 +474,18 @@ class PDFRenamer {
                             url: URL.createObjectURL(blob)
                         });
 
-                        console.log(`✅ Página ${data.pageNumber} de "${fileName}" processada: ${generatedFileName}`);
+
                     }
 
-                    console.log(`✅ Arquivo "${fileName}" processado completamente`);
+
 
                 } catch (error) {
-                    console.error(`❌ Erro ao processar arquivo "${fileName}":`, error);
+
                     UI.showToast(`Erro ao processar ${fileName}: ${error.message}`, 'warning');
                 }
             }
 
-            console.log(`✅ Processamento completo: ${this.processedPages.length} páginas processadas`);
+
 
             this.showMultipleFilesResults();
             UI.hideProgress();
@@ -496,7 +494,7 @@ class PDFRenamer {
             UI.showToast(`${successCount}/${this.processedPages.length} páginas processadas com sucesso!`, 'success');
 
         } catch (error) {
-            console.error('❌ Erro ao processar arquivos:', error);
+
             UI.hideProgress();
             UI.showToast('Erro ao processar arquivos: ' + error.message, 'error');
         }
@@ -624,7 +622,7 @@ class PDFRenamer {
         }
 
         try {
-            console.log(`📦 Criando ZIP organizado com ${this.processedPages.length} arquivo(s)`);
+
             UI.showProgress('Criando arquivo ZIP organizado...', 0);
 
             const zip = new JSZip();
@@ -647,7 +645,7 @@ class PDFRenamer {
                 const cleanFolderName = this.cleanFileNameForFolder(originalFileName);
                 const folderName = `${cleanFolderName}_Páginas_Processadas`;
 
-                console.log(`📂 Criando pasta: ${folderName}`);
+
 
                 // Add files to the folder
                 for (const page of pages) {
@@ -699,11 +697,11 @@ class PDFRenamer {
                 'success'
             );
 
-            console.log(`📦 ZIP criado: ${zipFileName}`);
-            console.log(`📊 Estrutura: ${Object.keys(filesByOriginal).length} pasta(s), ${totalFiles} arquivo(s)`);
+
+
 
         } catch (error) {
-            console.error('❌ Erro ao criar ZIP organizado:', error);
+
             UI.hideProgress();
             UI.showToast('Erro ao criar ZIP: ' + error.message, 'error');
         }

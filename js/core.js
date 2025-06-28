@@ -215,17 +215,17 @@ function initializeFileInputs() {
     const mainFileInput = document.getElementById('file-input');
     if (mainFileInput) {
         mainFileInput.addEventListener('change', (e) => {
-            console.log('Main file input changed:', e.target.files.length);
+            
             if (e.target.files.length > 0) {
                 const files = Array.from(e.target.files);
-                console.log('Files selected:', files.map(f => f.name));
+                
                 // Show files in general file list and route to current tab
                 displayMainFileList(files);
                 routeFilesToCurrentTab(files);
             }
         });
     } else {
-        console.warn('Main file input not found');
+        
     }
 
     // Multiple file inputs
@@ -251,10 +251,10 @@ function initializeFileInputs() {
 
 // Display main file list in general upload area
 function displayMainFileList(files) {
-    console.log('displayMainFileList called with:', files.length, 'files');
+    
     const container = document.getElementById('file-list');
     if (!container) {
-        console.error('file-list container not found');
+        
         return;
     }
 
@@ -342,10 +342,10 @@ function updateTabButtons(tabName) {
     // Habilitar botão se há arquivos PDF carregados
     if (pdfFiles.length > 0) {
         button.disabled = false;
-        console.log(`✅ Botão ${buttonId} habilitado (${pdfFiles.length} PDF(s) disponível(eis))`);
+        
     } else {
         button.disabled = true;
-        console.log(`⚠️ Botão ${buttonId} desabilitado (nenhum PDF carregado)`);
+        
     }
 
     // Atualizar também outros elementos específicos da aba
@@ -372,24 +372,24 @@ function updateTabSpecificElements(tabName, pdfFiles) {
 
         case 'split':
             // Atualizar informações do arquivo se há arquivo selecionado
-            console.log('🔄 Atualizando elementos da aba split...');
-            console.log('📁 Arquivos PDF disponíveis:', pdfFiles.length);
-            console.log('🔧 window.pdfSplitter disponível:', !!window.pdfSplitter);
+            
+            
+            
 
             if (pdfFiles.length > 0) {
                 const file = pdfFiles[0];
-                console.log('📄 Arquivo selecionado:', file.name);
+                
 
                 if (window.pdfSplitter && typeof window.pdfSplitter.displayFileInfo === 'function') {
                     // Chamar de forma assíncrona sem bloquear
                     window.pdfSplitter.displayFileInfo(file).catch(error => {
-                        console.error('❌ Erro ao executar displayFileInfo:', error);
+                        
                     });
                 } else {
-                    console.warn('⚠️ pdfSplitter ou displayFileInfo não disponível');
+                    
                 }
             } else {
-                console.log('📭 Nenhum arquivo PDF carregado para a aba split');
+                
                 // Esconder informações do arquivo se não há arquivos
                 const fileInfoContainer = document.getElementById('split-file-info');
                 if (fileInfoContainer) {
@@ -704,7 +704,7 @@ async function readPDFFile(file) {
         const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
         return pdfDoc;
     } catch (error) {
-        console.error('Erro ao ler PDF:', error);
+        
         throw new Error('Erro ao ler arquivo PDF');
     }
 }
@@ -781,32 +781,32 @@ document.addEventListener('DOMContentLoaded', function () {
             updateTabButtons(currentTab || 'split');
         }
 
-        console.log('🔧 Estado inicial dos botões configurado');
+        
     }, 100);
 });
 
 // Debug functions for testing (remove in production)
 window.debugUpload = {
     test: function () {
-        console.log('=== DEBUG UPLOAD TEST ===');
+        
 
-        console.log('Checking elements:');
+        
         const fileInput = document.getElementById('file-input');
         const dropZone = document.getElementById('drop-zone');
         const fileList = document.getElementById('file-list');
 
-        console.log('file-input:', fileInput);
-        console.log('drop-zone:', dropZone);
-        console.log('file-list:', fileList);
+        
+        
+        
 
-        console.log('Checking functions:');
-        console.log('displayMainFileList:', typeof displayMainFileList);
-        console.log('routeFilesToCurrentTab:', typeof routeFilesToCurrentTab);
-        console.log('formatFileSize:', typeof formatFileSize);
-        console.log('UI object:', typeof UI);
+        
+        
+        
+        
+        
 
         if (fileInput) {
-            console.log('Testing file input click...');
+            
             fileInput.click();
         }
 
@@ -814,7 +814,7 @@ window.debugUpload = {
     },
 
     simulateFileUpload: function () {
-        console.log('Simulating file upload...');
+        
         // Create a fake file for testing
         const fakeFile = new File(['test'], 'test.pdf', { type: 'application/pdf' });
         displayMainFileList([fakeFile]);
@@ -833,31 +833,31 @@ window.debugButtons = {
             'add-watermark'
         ];
 
-        console.log('=== ESTADO DOS BOTÕES ===');
+        
         buttons.forEach(id => {
             const btn = document.getElementById(id);
             if (btn) {
-                console.log(`${id}: ${btn.disabled ? 'DESABILITADO' : 'HABILITADO'}`);
+                
             } else {
-                console.log(`${id}: NÃO ENCONTRADO`);
+                
             }
         });
 
         const files = CORE.getUploadedFiles();
-        console.log(`Arquivos carregados: ${files.length}`);
-        console.log(`Aba atual: ${CORE.getCurrentTab()}`);
-        console.log('=========================');
+        
+        
+        
     },
 
     forceUpdateButtons: function () {
-        console.log('🔄 Forçando atualização dos botões...');
+        
         if (typeof updateTabButtons === 'function') {
             updateTabButtons(CORE.getCurrentTab());
             this.checkButtonStates();
         } else {
-            console.error('❌ Função updateTabButtons não encontrada');
+            
         }
     }
 };
 
-console.log('🔧 Debug disponível: window.debugButtons.checkButtonStates() e window.debugButtons.forceUpdateButtons()');
+

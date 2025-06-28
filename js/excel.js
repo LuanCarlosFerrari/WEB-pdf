@@ -96,7 +96,7 @@ class PDFToExcelConverter {
                     totalEstimatedRows += estimatedRows;
 
                 } catch (error) {
-                    console.warn(`Erro na análise prévia de ${file.name}:`, error);
+                    
                 }
             }
 
@@ -141,7 +141,7 @@ class PDFToExcelConverter {
             `;
 
         } catch (error) {
-            console.error('Erro na geração do preview:', error);
+            
             container.innerHTML = `
                 <div class="text-center">
                     <i class="fas fa-file-excel text-green-500 text-2xl mb-2"></i>
@@ -201,7 +201,7 @@ class PDFToExcelConverter {
             this.updatePreviewWithResults(totalConverted, files.length);
 
         } catch (error) {
-            console.error('Erro na conversão para Excel:', error);
+            
             UI.hideProgress();
             UI.showToast('Erro durante a conversão para Excel', 'error');
         }
@@ -260,7 +260,7 @@ class PDFToExcelConverter {
             return true;
 
         } catch (error) {
-            console.error(`Erro ao processar ${file.name}:`, error);
+            
             UI.addLog(`Erro ao processar ${file.name}: ${error.message}`, 'error');
             UI.showToast(`Erro ao processar ${file.name}: ${error.message}`, 'error');
             return false;
@@ -269,22 +269,22 @@ class PDFToExcelConverter {
 
     async extractTextFromPDF(file) {
         try {
-            console.log('Iniciando extração de texto do PDF:', file.name);
+            
 
             // Verificar se o arquivo é realmente um PDF
             if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
-                console.warn('Arquivo não é PDF, usando simulação:', file.name);
+                
                 return await this.simulateTextExtraction(file);
             }
 
             // Verificar tamanho do arquivo
             if (file.size === 0) {
-                console.warn('Arquivo está vazio, usando simulação:', file.name);
+                
                 return await this.simulateTextExtraction(file);
             }
 
             if (file.size > 50 * 1024 * 1024) { // 50MB
-                console.warn('Arquivo muito grande, usando simulação:', file.name);
+                
                 return await this.simulateTextExtraction(file);
             }
 
@@ -293,18 +293,18 @@ class PDFToExcelConverter {
                 try {
                     return await this.extractTextWithPDFJS(file);
                 } catch (pdfError) {
-                    console.warn('PDF.js falhou, usando simulação:', pdfError.message);
+                    
                     // Não registrar erro se já sabemos que vai para simulação
                     return await this.simulateTextExtraction(file);
                 }
             }
 
             // Fallback direto para simulação
-            console.log('PDF.js não disponível, usando simulação');
+            
             return await this.simulateTextExtraction(file);
 
         } catch (error) {
-            console.error('Erro geral na extração de texto:', error);
+            
             // Último recurso: sempre usar simulação
             return await this.simulateTextExtraction(file);
         }
@@ -334,7 +334,7 @@ class PDFToExcelConverter {
             });
 
             const pdf = await loadingTask.promise;
-            console.log('PDF carregado com sucesso, páginas:', pdf.numPages);
+            
 
             if (pdf.numPages === 0) {
                 throw new Error('PDF não possui páginas');
@@ -356,10 +356,10 @@ class PDFToExcelConverter {
                     fullText += pageText + '\n';
 
                     if (pageNum % 5 === 0 || pageNum === maxPages) {
-                        console.log(`Processadas ${pageNum}/${maxPages} páginas`);
+                        
                     }
                 } catch (pageError) {
-                    console.warn(`Erro ao processar página ${pageNum}:`, pageError);
+                    
                     fullText += `[Erro ao processar página ${pageNum}]\n`;
                 }
             }
@@ -368,7 +368,7 @@ class PDFToExcelConverter {
                 fullText += `\n[Nota: PDF possui ${pdf.numPages} páginas, mas apenas ${maxPages} foram processadas para melhor performance]\n`;
             }
 
-            console.log('Extração de texto concluída, caracteres extraídos:', fullText.length);
+            
 
             if (fullText.trim().length === 0) {
                 throw new Error('Nenhum texto extraído do PDF');
@@ -377,7 +377,7 @@ class PDFToExcelConverter {
             return fullText;
 
         } catch (error) {
-            console.error('Erro no PDF.js:', error);
+            
             // Distinguir diferentes tipos de erro
             if (error.name === 'InvalidPDFException' || error.message.includes('Invalid PDF')) {
                 throw new Error('PDF possui estrutura inválida ou está corrompido');
@@ -395,7 +395,7 @@ class PDFToExcelConverter {
         // Simulação de extração de texto com dados de exemplo
         // Em implementação real, usaria pdf.js ou similar
 
-        console.log('Usando simulação para extração de texto de:', file.name);
+        
 
         // Simular delay de processamento mais rápido
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -1010,7 +1010,7 @@ Versão Sistema,2.1.0
             }
 
         } catch (error) {
-            console.error('Erro no padrão customizado:', error);
+            
             return this.extractTablesFromText(text);
         }
 
@@ -1070,7 +1070,7 @@ Versão Sistema,2.1.0
             URL.revokeObjectURL(link.href);
 
         } catch (error) {
-            console.error('Erro ao criar arquivo Excel:', error);
+            
             throw error;
         }
     }
@@ -1285,7 +1285,7 @@ Versão Sistema,2.1.0
                 stats.estimatedTables += this.estimateTableCount(text);
                 stats.estimatedRows += tables.length;
             } catch (error) {
-                console.error(`Erro ao analisar ${file.name}:`, error);
+                
             }
         }
 

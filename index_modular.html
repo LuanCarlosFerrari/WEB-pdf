@@ -1532,8 +1532,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Show startup message
             setTimeout(() => {
-                UI.showToast('Sistema modular iniciado! 🚀', 'success');
-                UI.addLog('Sistema modular carregado com sucesso');
+                UI.showToast('Sistema iniciado! 🚀', 'success');
             }, 1000);
 
             // Update range input displays
@@ -1564,19 +1563,11 @@
                     this.focus();
                 });
 
-                // Debug para verificar se está funcionando
-                watermarkTextInput.addEventListener('input', function () {
-                    console.log('Texto digitado na marca d\'água:', this.value);
-                });
-
-                console.log('Campo de texto da marca d\'água configurado:', watermarkTextInput);
-
                 // Re-habilitar o campo após qualquer mudança de aba
                 const observer = new MutationObserver(function (mutations) {
                     mutations.forEach(function (mutation) {
                         if (mutation.type === 'attributes' && mutation.attributeName === 'disabled') {
                             if (watermarkTextInput.disabled) {
-                                console.log('Campo de marca d\'água foi desabilitado, re-habilitando...');
                                 setTimeout(() => {
                                     watermarkTextInput.disabled = false;
                                 }, 10);

@@ -227,7 +227,7 @@ Object.assign(window.UI, {
 
     // Error handling with standardized styling
     handleError: function (operation, error) {
-        console.error(`Erro em ${operation}:`, error);
+        
         this.addLog(`Erro em ${operation}: ${error.message}`, 'error');
         this.showToast(`Erro: ${error.message}`, 'error');
         this.hideProgress(operation);

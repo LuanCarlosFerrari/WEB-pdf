@@ -24,7 +24,7 @@ Object.assign(window.UI, {
             }
         } else {
             // Fallback: log to console if status indicator doesn't exist
-            console.log(`Status: ${message} (${type})`);
+            
         }
     },
 
@@ -192,7 +192,7 @@ Object.assign(window.UI, {
 
     // Error handling
     handleError: function (operation, error) {
-        console.error(`Erro em ${operation}:`, error);
+        
         this.addLog(`❌ Erro em ${operation}: ${error.message}`);
         this.showToast(`Erro: ${error.message}`, 'error');
         this.updateStatus('Erro no processamento', 'error');

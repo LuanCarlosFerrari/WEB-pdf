@@ -112,7 +112,7 @@ class PDFMerger {
                     UI.addLog(`Arquivo adicionado: ${file.name} (${pageCount} páginas)`);
 
                 } catch (error) {
-                    console.error(`Erro ao processar ${file.name}:`, error);
+                    
                     UI.addLog(`Erro ao processar ${file.name}: ${error.message}`, 'error');
                     // Continuar com os outros arquivos
                 }
@@ -143,7 +143,7 @@ class PDFMerger {
             UI.addLog(`PDF mesclado criado: ${mergedFileName} (${totalPagesAdded} páginas total)`);
 
         } catch (error) {
-            console.error('Erro na mesclagem de PDFs:', error);
+            
             UI.hideProgress();
             UI.showToast(`Erro durante a mesclagem dos PDFs: ${error.message}`, 'error');
         }
