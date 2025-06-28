@@ -260,13 +260,19 @@ class BradescoTemplate {
                 /Razao\s+Social[:\s]*([A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ][A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ\s&.\-\/0-9DE DA DO PROD LTDA ME SA EIRELI]{3,80}?)(?=\s*(?:CPF|CNPJ|Valor|R\$|\d{2}\.\d{3}|\n|$))/i
             ],
 
-            // 🔄 FALLBACK: Campo "Favorecido" (para documentos mais antigos)
+            // 🔄 FALLBACK: Campo "Favorecido" (para documentos mais antigos e TEDs)
             favorecido: [
+                // Padrão ESPECÍFICO PARA TED: Favorecido: seguido de nome até CPF/CNPJ
+                /Favorecido:\s*([A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ][A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ\s&.\-\/0-9]+?)(?=\s*(?:CPF|CNPJ))/i,
+
                 // Padrão ULTRA-SIMPLES 1: Favorecido: NOME (baseado no exemplo real)
                 /Favorecido:\s*([A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ][A-Z\s&.\-\/0-9DE DA DO PROD LTDA ME SA EIRELI]+?)(?=\s*Valor|$)/i,
 
                 // Padrão SIMPLES 2: Favorecido seguido de qualquer nome em maiúscula
-                /Favorecido[:\s]+([A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ][A-Z\s&.\-\/0-9DE DA DO PROD LTDA ME SA EIRELI]{3,80}?)(?=\s*(?:Valor|R\$|Ag[eê]ncia|\d|\n|$))/i
+                /Favorecido[:\s]+([A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ][A-Z\s&.\-\/0-9DE DA DO PROD LTDA ME SA EIRELI]{3,80}?)(?=\s*(?:Valor|R\$|Ag[eê]ncia|\d|\n|$))/i,
+
+                // Padrão FLEXÍVEL: Favorecido seguido de nome até próximo campo bancário
+                /Favorecido[:\s]+([A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ][A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ\s&.\-\/0-9]{3,50}?)(?=\s*(?:CPF|CNPJ|Banco|Agência|\d{3}[\.\-]|\n|$))/i
             ]
         };
 
@@ -465,6 +471,9 @@ class BradescoTemplate {
         const patterns = {
             // 🔥 PRIORIDADE MÁXIMA: Campo "Favorecido"
             favorecido: [
+                // Padrão ESPECÍFICO PARA TED: Favorecido: seguido de nome até CPF/CNPJ
+                /Favorecido:\s*([A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ][A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ\s&.\-\/0-9]+?)(?=\s*(?:CPF|CNPJ))/i,
+
                 // Padrão RIGOROSO 1: Favorecido: seguido do nome na mesma linha
                 /Favorecido:\s*([A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ][A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ\s&.\-\/0-9DE DA DO PROD LTDA ME SA EIRELI]{3,80}?)(?=\s*(?:CPF|CNPJ|R\$|\d{2}\.\d{3}|[\r\n]|$))/i,
 
@@ -474,8 +483,8 @@ class BradescoTemplate {
                 // Padrão RIGOROSO 3: Favorecido com quebra de linha
                 /Favorecido[:\s]*[\n\r]\s*([A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ][A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ\s&.\-\/0-9DE DA DO PROD LTDA ME SA EIRELI]{3,80}?)(?=\s*(?:CPF|CNPJ|R\$|\d{2}\.\d{3}|[\r\n]|$))/i,
 
-                // Padrão RIGOROSO 4: Busca específica pela estrutura "Favorecido" seguido de nome
-                /\bFavorecido[:\s]+([A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ][A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ\s&.\-\/0-9DE DA DO PROD LTDA ME SA]{3,60})(?=\s*(?:CPF|CNPJ|R\$|Valor|[\r\n]))/i
+                // Padrão FLEXÍVEL: Favorecido seguido de nome até próximo campo bancário
+                /Favorecido[:\s]+([A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ][A-ZÁÊÇÕÜÚÀÂÃÉÊÍÓÔÕ\s&.\-\/0-9]{3,50}?)(?=\s*(?:CPF|CNPJ|Banco|Agência|\d{3}[\.\-]|[\r\n]|$))/i
             ],
             // 📋 PRIORIDADE 2: Razão Social
             razaoSocial: [
