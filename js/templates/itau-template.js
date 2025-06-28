@@ -5,12 +5,13 @@ class ItauTemplate {
     constructor() {
         this.bankName = 'Itaú';
         this.supportedTypes = ['PIX', 'Boleto', 'TED'];
-        
+
     }
 
     // Método principal para extrair dados do texto
     extractData(text, pageNum) {
-        
+        console.log(`[ITAÚ] Iniciando extração - Página ${pageNum}`);
+        console.log(`[ITAÚ] Texto completo:`, text);
 
         const result = {
             pageNumber: pageNum,
@@ -26,8 +27,9 @@ class ItauTemplate {
             // Detectar tipo de comprovante
             const documentType = this.detectDocumentType(text);
             result.type = documentType;
+            console.log(`[ITAÚ] Tipo de documento detectado: ${documentType}`);
 
-            
+
 
             // Extrair dados baseado no tipo
             switch (documentType) {
@@ -41,14 +43,14 @@ class ItauTemplate {
                     this.extractTedData(text, result);
                     break;
                 default:
-                    
+                    console.log(`[ITAÚ] Tipo de documento não reconhecido: ${documentType}`);
                     break;
             }
 
-            
+            console.log(`[ITAÚ] Resultado final da extração:`, result);
 
         } catch (error) {
-            
+            console.error(`[ITAÚ] Erro durante extração:`, error);
         }
 
         return result;
@@ -90,47 +92,128 @@ class ItauTemplate {
 
     // Extrair dados específicos do PIX
     extractPixData(text, result) {
-        
+        console.log(`[ITAÚ PIX] Iniciando extração de dados PIX`);
+        console.log(`[ITAÚ PIX] Texto para análise:`, text.substring(0, 500));
 
         // Padrões específicos para PIX
         const patterns = {
             // Nome do recebedor (aparece após "nome do recebedor:")
             recipient: /nome do recebedor:\s*([A-ZÁÊÇÕÜÚ\s]+)/i,
-            // Valor da transação
+            // Valor da transação - padrão principal
+            valueTransaction: /valor da transação:\s*([\d.,]+)/i,
+            // Valor final
+            valueFinal: /valor final:\s*([\d.,]+)/i,
+            // Valor do documento
+            valueDocument: /valor do documento:\s*([\d.,]+)/i,
+            // Valor genérico com "valor"
+            valueGeneric: /valor[^:]*:\s*([\d.,]+)/i,
+            // Valor com R$ (padrão antigo mantido como fallback)
             value: /valor:\s*R\$\s*([\d.,]+)/i,
-            // Valor alternativo
-            valueAlt: /R\$\s*([\d.,]+)/g
+            // Qualquer valor monetário no formato brasileiro
+            valueNumeric: /([\d]{1,3}(?:\.[\d]{3})*,[\d]{2})/g
         };
 
         // Extrair destinatário
         const recipientMatch = text.match(patterns.recipient);
+        console.log(`[ITAÚ PIX] Match do destinatário:`, recipientMatch);
         if (recipientMatch) {
             result.recipient = this.formatName(recipientMatch[1].trim());
             result.success = true;
+            console.log(`[ITAÚ PIX] Destinatário encontrado: ${result.recipient}`);
+        } else {
+            console.log(`[ITAÚ PIX] Destinatário não encontrado`);
         }
 
-        // Extrair valor
-        let valueMatch = text.match(patterns.value);
+        // Extrair valor - tentar múltiplos padrões em ordem de prioridade
+        let valueMatch = null;
+        let matchedPattern = '';
+
+        // 1. Tentar "valor da transação"
+        valueMatch = text.match(patterns.valueTransaction);
         if (valueMatch) {
+            matchedPattern = 'valueTransaction';
+            console.log(`[ITAÚ PIX] Valor encontrado (valor da transação):`, valueMatch);
+        }
+
+        // 2. Tentar "valor final"
+        if (!valueMatch) {
+            valueMatch = text.match(patterns.valueFinal);
+            if (valueMatch) {
+                matchedPattern = 'valueFinal';
+                console.log(`[ITAÚ PIX] Valor encontrado (valor final):`, valueMatch);
+            }
+        }
+
+        // 3. Tentar "valor do documento"
+        if (!valueMatch) {
+            valueMatch = text.match(patterns.valueDocument);
+            if (valueMatch) {
+                matchedPattern = 'valueDocument';
+                console.log(`[ITAÚ PIX] Valor encontrado (valor do documento):`, valueMatch);
+            }
+        }
+
+        // 4. Tentar padrão genérico com "valor"
+        if (!valueMatch) {
+            valueMatch = text.match(patterns.valueGeneric);
+            if (valueMatch) {
+                matchedPattern = 'valueGeneric';
+                console.log(`[ITAÚ PIX] Valor encontrado (padrão genérico):`, valueMatch);
+            }
+        }
+
+        // 5. Tentar padrão antigo com R$
+        if (!valueMatch) {
+            valueMatch = text.match(patterns.value);
+            if (valueMatch) {
+                matchedPattern = 'value';
+                console.log(`[ITAÚ PIX] Valor encontrado (padrão R$):`, valueMatch);
+            }
+        }
+
+        // 6. Como último recurso, procurar valores numéricos e pegar o maior
+        if (!valueMatch) {
+            const numericMatches = [...text.matchAll(patterns.valueNumeric)];
+            console.log(`[ITAÚ PIX] Matches numéricos encontrados:`, numericMatches);
+            if (numericMatches.length > 0) {
+                // Filtrar valores que podem ser valores monetários (> 1,00) e não são zeros
+                const monetaryValues = numericMatches
+                    .map(match => ({ value: this.parseValue(match[1]), original: match[1] }))
+                    .filter(item => item.value >= 1.00);
+
+                console.log(`[ITAÚ PIX] Valores monetários válidos:`, monetaryValues);
+                if (monetaryValues.length > 0) {
+                    // Pegar o maior valor (provavelmente o valor da transferência)
+                    const maxItem = monetaryValues.reduce((max, item) =>
+                        item.value > max.value ? item : max
+                    );
+                    valueMatch = [null, maxItem.original];
+                    matchedPattern = 'valueNumeric';
+                    console.log(`[ITAÚ PIX] Maior valor monetário selecionado:`, maxItem);
+                }
+            }
+        }
+
+        if (valueMatch && valueMatch[1]) {
             result.value = this.formatValue(valueMatch[1]);
+            console.log(`[ITAÚ PIX] Valor final definido: ${result.value} (padrão: ${matchedPattern})`);
         } else {
-            // Tentar padrão alternativo
-            const valueMatches = [...text.matchAll(patterns.valueAlt)];
-            if (valueMatches.length > 0) {
-                // Pegar o maior valor (provavelmente o valor da transferência)
-                const values = valueMatches.map(match => this.parseValue(match[1]));
-                const maxValue = Math.max(...values);
-                result.value = this.formatValue(maxValue.toString());
+            console.log(`[ITAÚ PIX] Nenhum valor encontrado em todos os padrões testados`);
+            // Debug: mostrar todos os números encontrados
+            const allNumbers = text.match(/[\d.,]+/g);
+            if (allNumbers) {
+                console.log(`[ITAÚ PIX] Todos os números encontrados no texto:`, allNumbers);
             }
         }
     }
 
     // Extrair dados específicos do Boleto
     extractBoletoData(text, result) {
-        
+        console.log(`[ITAÚ BOLETO] Iniciando extração de dados de boleto`);
+        console.log(`[ITAÚ BOLETO] Texto para análise:`, text.substring(0, 500));
 
         // Debug: mostrar o texto que está sendo analisado
-        
+        console.log(`[ITAÚ BOLETO] Texto completo normalizado:`, text.replace(/\s+/g, ' ').substring(0, 800));
 
         // Padrões específicos para Boleto
         const patterns = {
@@ -150,15 +233,16 @@ class ItauTemplate {
 
         // Extrair beneficiário
         const recipientMatch = text.match(patterns.recipient);
+        console.log(`[ITAÚ BOLETO] Match do beneficiário:`, recipientMatch);
         if (recipientMatch) {
             let beneficiario = recipientMatch[1].trim();
             // Limpar texto extra que pode vir junto
             beneficiario = beneficiario.replace(/\s+/g, ' ').trim();
             result.recipient = this.formatName(beneficiario);
             result.success = true;
-            
+            console.log(`[ITAÚ BOLETO] Beneficiário encontrado: ${result.recipient}`);
         } else {
-            
+            console.log(`[ITAÚ BOLETO] Beneficiário não encontrado`);
         }
 
         // Extrair valor - tentar múltiplos padrões
@@ -169,6 +253,7 @@ class ItauTemplate {
         valueMatch = text.match(patterns.valuePayment);
         if (valueMatch) {
             matchedPattern = 'valuePayment';
+            console.log(`[ITAÚ BOLETO] Valor encontrado (valuePayment):`, valueMatch);
         }
 
         // Tentar padrão do valor do boleto
@@ -176,6 +261,7 @@ class ItauTemplate {
             valueMatch = text.match(patterns.valueBoleto);
             if (valueMatch) {
                 matchedPattern = 'valueBoleto';
+                console.log(`[ITAÚ BOLETO] Valor encontrado (valueBoleto):`, valueMatch);
             }
         }
 
@@ -184,16 +270,19 @@ class ItauTemplate {
             valueMatch = text.match(patterns.valuePaymentAlt);
             if (valueMatch) {
                 matchedPattern = 'valuePaymentAlt';
+                console.log(`[ITAÚ BOLETO] Valor encontrado (valuePaymentAlt):`, valueMatch);
             }
         }
 
         // Tentar padrão genérico
         if (!valueMatch) {
             const generalMatches = [...text.matchAll(patterns.valueGeneral)];
+            console.log(`[ITAÚ BOLETO] Matches genéricos encontrados:`, generalMatches);
             if (generalMatches.length > 0) {
                 // Pegar o maior valor encontrado
                 const values = generalMatches.map(match => this.parseValue(match[1]));
                 const maxValue = Math.max(...values);
+                console.log(`[ITAÚ BOLETO] Valores numéricos encontrados:`, values, `Maior: ${maxValue}`);
                 if (maxValue > 0) {
                     valueMatch = [null, maxValue.toString().replace('.', ',')];
                     matchedPattern = 'valueGeneral';
@@ -204,12 +293,14 @@ class ItauTemplate {
         // Como último recurso, procurar qualquer padrão numérico monetário
         if (!valueMatch) {
             const numericMatches = [...text.matchAll(patterns.valueNumeric)];
+            console.log(`[ITAÚ BOLETO] Matches numéricos encontrados:`, numericMatches);
             if (numericMatches.length > 0) {
                 // Filtrar valores que podem ser valores monetários (> 1,00)
                 const monetaryValues = numericMatches
                     .map(match => ({ value: this.parseValue(match[1]), original: match[1] }))
                     .filter(item => item.value >= 1.00);
 
+                console.log(`[ITAÚ BOLETO] Valores monetários válidos:`, monetaryValues);
                 if (monetaryValues.length > 0) {
                     // Pegar o maior valor
                     const maxItem = monetaryValues.reduce((max, item) =>
@@ -217,31 +308,32 @@ class ItauTemplate {
                     );
                     valueMatch = [null, maxItem.original];
                     matchedPattern = 'valueNumeric';
+                    console.log(`[ITAÚ BOLETO] Maior valor monetário selecionado:`, maxItem);
                 }
             }
         }
 
         if (valueMatch && valueMatch[1]) {
             result.value = this.formatValue(valueMatch[1]);
-            
+            console.log(`[ITAÚ BOLETO] Valor final definido: ${result.value} (padrão: ${matchedPattern})`);
         } else {
-            
-            
+            console.log(`[ITAÚ BOLETO] Nenhum valor encontrado em todos os padrões testados`);
+            console.log(`[ITAÚ BOLETO] Padrões testados: valuePayment, valueBoleto, valuePaymentAlt, valueGeneral, valueNumeric`);
 
             // Debug: mostrar todos os números encontrados
             const allNumbers = text.match(/[\d.,]+/g);
             if (allNumbers) {
-                
+                console.log(`[ITAÚ BOLETO] Todos os números encontrados no texto:`, allNumbers);
             }
         }
     }
 
     // Extrair dados específicos do TED
     extractTedData(text, result) {
-        
+
 
         // Debug: mostrar o texto que está sendo analisado
-        
+
 
         // Padrões específicos para TED
         const patterns = {
@@ -292,14 +384,14 @@ class ItauTemplate {
 
             result.recipient = this.formatName(favorecido);
             result.success = true;
-            
+
         } else {
-            
+
 
             // Debug: tentar encontrar qualquer ocorrência de "favorecido"
             const debugMatch = text.match(/favorecido[^a-z]*([A-Z][^0-9\r\n]+)/i);
             if (debugMatch) {
-                
+
             }
         }
 
@@ -311,9 +403,9 @@ class ItauTemplate {
 
         if (valueMatch) {
             result.value = this.formatValue(valueMatch[1]);
-            
+
         } else {
-            
+
         }
     }
 
@@ -340,7 +432,7 @@ class ItauTemplate {
         }
 
         const result = parseFloat(cleanValue) || 0;
-        
+
         return result;
     }
 
