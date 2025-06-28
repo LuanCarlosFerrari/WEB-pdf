@@ -390,30 +390,83 @@ class PDFRenamer {
                 console.log('🔢 Números encontrados:', allNumbers);
             }
         }
-    }
-
-    extractTedData(text, result) {
+    } extractTedData(text, result) {
         console.log('🏛️ Extraindo dados de TED');
+
+        // Debug: mostrar o texto que está sendo analisado
+        console.log('📝 Texto do TED:', text.substring(0, 500));
 
         // Padrões específicos para TED
         const patterns = {
-            // Nome do favorecido
-            recipient: /Nome do favorecido:\s*([A-ZÁÊÇÕÜÚ\s]+?)(?:\s+CPF|$)/i,
-            // Valor da TED
-            value: /Valor da TED:\s*R\$\s*([\d.,]+)/i
+            // Nome do favorecido - padrão mais abrangente
+            recipient: /Nome do favorecido:\s*([A-ZÁÊÇÕÜÚ][A-ZÁÊÇÕÜÚ\s&.\-\/]+?)(?:\s+(?:CPF|CNPJ)|[\r\n]|$)/i,
+            // Padrão alternativo para capturar nomes com caracteres especiais
+            recipientAlt: /Nome do favorecido:\s*([A-Z][A-Z\s\-&.\/]+)/i,
+            // Padrão mais genérico
+            recipientGeneral: /favorecido:\s*([A-ZÁÊÇÕÜÚ][^0-9\r\n]+?)(?:\s+(?:CPF|CNPJ)|[\r\n]|Número|Agência|$)/i,
+            // Valor da TED - padrão mais robusto
+            value: /Valor da TED:\s*R\$\s*([\d.,]+)/i,
+            // Valor alternativo
+            valueAlt: /TED:\s*R\$\s*([\d.,]+)/i
         };
 
-        // Extrair favorecido
-        const recipientMatch = text.match(patterns.recipient);
+        // Extrair favorecido - tentar múltiplos padrões
+        let recipientMatch = null;
+        let matchedPattern = '';
+
+        // Tentar padrão principal
+        recipientMatch = text.match(patterns.recipient);
         if (recipientMatch) {
-            result.recipient = this.formatName(recipientMatch[1].trim());
+            matchedPattern = 'recipient';
+        }
+
+        // Tentar padrão alternativo
+        if (!recipientMatch) {
+            recipientMatch = text.match(patterns.recipientAlt);
+            if (recipientMatch) {
+                matchedPattern = 'recipientAlt';
+            }
+        }
+
+        // Tentar padrão genérico
+        if (!recipientMatch) {
+            recipientMatch = text.match(patterns.recipientGeneral);
+            if (recipientMatch) {
+                matchedPattern = 'recipientGeneral';
+            }
+        }
+
+        if (recipientMatch) {
+            let favorecido = recipientMatch[1].trim();
+            // Limpar texto extra que pode vir junto
+            favorecido = favorecido.replace(/\s+/g, ' ').trim();
+            // Remover possíveis sufixos indesejados
+            favorecido = favorecido.replace(/\s+(CPF|CNPJ).*$/i, '');
+
+            result.recipient = this.formatName(favorecido);
             result.success = true;
+            console.log(`✅ Favorecido extraído: ${result.recipient} (padrão: ${matchedPattern})`);
+        } else {
+            console.warn('⚠️ Favorecido não encontrado no TED');
+
+            // Debug: tentar encontrar qualquer ocorrência de "favorecido"
+            const debugMatch = text.match(/favorecido[^a-z]*([A-Z][^0-9\r\n]+)/i);
+            if (debugMatch) {
+                console.log('🔍 Possível favorecido encontrado:', debugMatch[1]);
+            }
         }
 
         // Extrair valor
-        const valueMatch = text.match(patterns.value);
+        let valueMatch = text.match(patterns.value);
+        if (!valueMatch) {
+            valueMatch = text.match(patterns.valueAlt);
+        }
+
         if (valueMatch) {
             result.value = this.formatValue(valueMatch[1]);
+            console.log(`✅ Valor extraído: R$ ${result.value}`);
+        } else {
+            console.warn('⚠️ Valor não encontrado no TED');
         }
     }
 
@@ -466,24 +519,47 @@ class PDFRenamer {
     formatName(name) {
         if (!name) return 'Nome não encontrado';
 
-        // Limpar espaços extras
+        // Limpar espaços extras e caracteres indesejados
         let cleanName = name.trim().replace(/\s+/g, ' ');
 
-        // Se o nome está todo em maiúscula (como nomes de empresas), manter o formato original
+        // Remover possíveis restos de texto que podem ter vindo junto
+        cleanName = cleanName.replace(/\s+(CPF|CNPJ).*$/i, '');
+        cleanName = cleanName.replace(/^\s*[-:]\s*/, ''); // Remove hífen ou dois pontos no início
+
+        // Se o nome está todo em maiúscula (como nomes de empresas), formatar adequadamente
         if (cleanName === cleanName.toUpperCase()) {
             // Para empresas, converter para título mas manter algumas palavras específicas em maiúscula
-            const wordsToKeepUpper = ['LTDA', 'SA', 'ME', 'EPP', 'EIRELI', 'DO', 'DA', 'DE', 'E'];
-            return cleanName.toLowerCase().replace(/\b\w+/g, (word) => {
+            const wordsToKeepUpper = ['LTDA', 'SA', 'ME', 'EPP', 'EIRELI', 'DO', 'DA', 'DE', 'E', 'COM', 'LTDA.', 'S.A.'];
+            const wordsToKeepLower = ['de', 'da', 'do', 'e', 'com'];
+
+            return cleanName.toLowerCase().replace(/\b[\w\-]+/g, (word) => {
                 const upperWord = word.toUpperCase();
+                const lowerWord = word.toLowerCase();
+
+                // Manter palavras específicas em maiúscula
                 if (wordsToKeepUpper.includes(upperWord)) {
                     return upperWord;
                 }
-                return word.charAt(0).toUpperCase() + word.slice(1);
+
+                // Manter algumas preposições em minúscula (exceto se for a primeira palavra)
+                if (wordsToKeepLower.includes(lowerWord) && cleanName.toLowerCase().indexOf(lowerWord) > 0) {
+                    return lowerWord;
+                }
+
+                // Para palavras com hífen, capitalizar cada parte
+                if (word.includes('-')) {
+                    return word.split('-').map(part =>
+                        part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+                    ).join('-');
+                }
+
+                // Capitalizar normalmente
+                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
             });
         }
 
-        // Para nomes normais, converter para título
-        return cleanName.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+        // Para nomes normais (já em formato misto), apenas limpar
+        return cleanName.replace(/\b\w/g, l => l.toUpperCase());
     }
 
     updatePreviewWithData() {
