@@ -46,7 +46,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (typeof UI !== 'undefined') {
             UI.addLog('✅ Sistema iniciado com sucesso', 'success');
-            UI.showToast('Sistema iniciado com sucesso!', 'success');
         }
 
     } catch (error) {
