@@ -50,14 +50,7 @@ class PDFRenamer {
             });
         }
 
-        // Add event listener for individual downloads
-        const downloadIndividualBtn = document.getElementById('rename-download-individual');
-        if (downloadIndividualBtn) {
-            downloadIndividualBtn.addEventListener('click', () => {
-                console.log('📄 Botão de downloads individuais clicado');
-                this.downloadAllFilesIndividual();
-            });
-        }
+
 
         if (layoutSelect) {
             layoutSelect.addEventListener('change', () => {
@@ -772,63 +765,7 @@ Sistema PDF Processor - Renomeação Automática
             .substring(0, 50); // Limit length
     }
 
-    async downloadAllFilesIndividual() {
-        if (this.processedPages.length === 0) {
-            UI.showToast('Nenhum arquivo para download', 'warning');
-            return;
-        }
 
-        try {
-            console.log(`📥 Iniciando downloads individuais de ${this.processedPages.length} arquivo(s)`);
-
-            // Group files by original file for organized download
-            const filesByOriginal = {};
-            this.processedPages.forEach(page => {
-                if (!filesByOriginal[page.originalFileName]) {
-                    filesByOriginal[page.originalFileName] = [];
-                }
-                filesByOriginal[page.originalFileName].push(page);
-            });
-
-            let downloadIndex = 0;
-            const totalFiles = this.processedPages.length;
-
-            // Show user instruction
-            UI.showToast(
-                '💡 Dica: Os arquivos serão baixados individualmente. Configure seu navegador para baixar em pastas específicas se desejar organização.',
-                'info'
-            );
-
-            // Download files with staggered timing
-            for (const [originalFileName, pages] of Object.entries(filesByOriginal)) {
-                console.log(`📂 Baixando páginas do arquivo: ${originalFileName}`);
-
-                for (const page of pages) {
-                    setTimeout(() => {
-                        const link = document.createElement('a');
-                        link.href = page.url;
-                        link.download = page.fileName;
-                        link.click();
-
-                        console.log(`📥 Download iniciado (${downloadIndex + 1}/${totalFiles}): ${page.fileName}`);
-                    }, downloadIndex * 300); // Reduced interval to 300ms for faster downloads
-
-                    downloadIndex++;
-                }
-            }
-
-            UI.showToast(
-                `📥 Downloads iniciados: ${totalFiles} arquivo(s) de ${Object.keys(filesByOriginal).length} PDF(s) original(is)`,
-                'success'
-            );
-
-            UI.addLog(`📥 Downloads individuais iniciados - ${totalFiles} arquivo(s) de ${Object.keys(filesByOriginal).length} PDF(s)`);
-
-        } catch (error) {
-            console.error('❌ Erro nos downloads individuais:', error);
-            UI.showToast('Erro nos downloads: ' + error.message, 'error');
-        }
-    }
 
     formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
