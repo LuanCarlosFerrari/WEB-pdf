@@ -442,7 +442,10 @@ class ItauTemplate {
         if (isNaN(numValue) || numValue <= 0) {
             return '0,00';
         }
-        return numValue.toFixed(2).replace('.', ',');
+        return numValue.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
 
     formatName(name) {
